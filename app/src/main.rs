@@ -89,40 +89,84 @@ fn App() -> impl IntoView {
 fn Header(
     characters: ReadSignal<Vec<Character>>,
     selected_character_id: ReadSignal<Option<i32>>,
-    on_character_select: impl Fn(i32) + 'static + Copy,
+    on_character_select: impl Fn(i32) + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
+    let (show_dropdown, set_show_dropdown) = signal(false);
+
+    let selected_character = move || {
+        selected_character_id
+            .get()
+            .and_then(|id| characters.get().iter().find(|c| c.id == id).cloned())
+    };
+
     view! {
         <header class="header">
             <h1>"スマブラSP 戦績管理"</h1>
             <div class="header-character">
-                <label>"使用キャラ: "</label>
-                <select
-                    class="character-select"
-                    on:change=move |ev| {
-                        let id = event_target_value(&ev).parse().unwrap_or(0);
-                        if id > 0 {
-                            on_character_select(id);
-                        }
-                    }
+                <div
+                    class="character-avatar"
+                    on:click=move |_| set_show_dropdown.set(!show_dropdown.get())
                 >
-
-                    <option value="0">"選択してください"</option>
                     {move || {
-                        characters
-                            .get()
-                            .iter()
-                            .map(|c| {
-                                let is_selected = selected_character_id.get() == Some(c.id);
-                                view! {
-                                    <option value=c.id selected=is_selected>
-                                        {c.name.clone()}
-                                    </option>
-                                }
-                            })
-                            .collect_view()
+                        if let Some(char) = selected_character() {
+                            view! {
+                                <img
+                                    src=format!("/public/fighters/{}.png", char.fighter_key)
+                                    class="avatar-icon"
+                                    alt=char.name
+                                />
+                            }
+                                .into_any()
+                        } else {
+                            view! { <div class="avatar-placeholder">"?"</div> }.into_any()
+                        }
                     }}
 
-                </select>
+                </div>
+
+                <Show when=move || show_dropdown.get()>
+                    <div
+                        class="character-dropdown"
+                        on:click=move |e| e.stop_propagation()
+                    >
+                        <div class="dropdown-header">"使用キャラを選択"</div>
+                        <div class="character-grid">
+                            {move || {
+                                let mut chars = characters.get();
+                                chars.sort_by_key(|c| c.id);
+                                chars
+                                    .iter()
+                                    .map(|c| {
+                                        let char_id = c.id;
+                                        let is_selected = selected_character_id.get() == Some(char_id);
+                                        let fighter_key = c.fighter_key.clone();
+                                        let char_name = c.name.clone();
+                                        let char_name_for_alt = char_name.clone();
+                                        view! {
+                                            <div
+                                                class="character-grid-item"
+                                                class:selected=move || is_selected
+                                                on:click=move |_| {
+                                                    on_character_select(char_id);
+                                                    set_show_dropdown.set(false);
+                                                }
+
+                                                title=char_name
+                                            >
+                                                <img
+                                                    src=format!("/public/fighters/{}.png", fighter_key)
+                                                    class="grid-icon"
+                                                    alt=char_name_for_alt
+                                                />
+                                            </div>
+                                        }
+                                    })
+                                    .collect_view()
+                            }}
+
+                        </div>
+                    </div>
+                </Show>
             </div>
         </header>
     }
@@ -313,6 +357,7 @@ fn MatchList(
     view! {
         <div class="match-list">
             {move || {
+                let chars = characters.get();
                 matches
                     .get()
                     .iter()
@@ -322,6 +367,7 @@ fn MatchList(
                                 match_data=m.clone()
                                 char_name=m.character_name.clone()
                                 opp_name=m.opponent_character_name.clone()
+                                characters=chars.clone()
                             />
                         }
                     })
@@ -356,7 +402,12 @@ fn MatchList(
 }
 
 #[component]
-fn MatchItem(match_data: Match, char_name: String, opp_name: String) -> impl IntoView {
+fn MatchItem(
+    match_data: Match,
+    char_name: String,
+    opp_name: String,
+    characters: Vec<Character>,
+) -> impl IntoView {
     let initial_comment = match_data.comment.clone().unwrap_or_default();
     let (editing_comment, set_editing_comment) = signal(false);
     let (comment_value, set_comment_value) = signal(initial_comment.clone());
@@ -397,10 +448,36 @@ fn MatchItem(match_data: Match, char_name: String, opp_name: String) -> impl Int
         });
     };
 
+    // キャラクター名からfighter_keyを取得
+    let char_key = characters
+        .iter()
+        .find(|c| c.name == char_name)
+        .map(|c| c.fighter_key.clone())
+        .unwrap_or_default();
+    let opp_key = characters
+        .iter()
+        .find(|c| c.name == opp_name)
+        .map(|c| c.fighter_key.clone())
+        .unwrap_or_default();
+
     view! {
         <div class="match-item">
             <div class="match-row">
-                <div class="match-characters">{format!("{} vs {}", char_name, opp_name)}</div>
+                <div class="match-characters">
+                    <img
+                        src=format!("/public/fighters/{}.png", char_key)
+                        class="character-icon"
+                        alt=char_name.clone()
+                    />
+                    <span>{char_name}</span>
+                    <span class="vs-text">" vs "</span>
+                    <img
+                        src=format!("/public/fighters/{}.png", opp_key)
+                        class="character-icon"
+                        alt=opp_name.clone()
+                    />
+                    <span>{opp_name}</span>
+                </div>
 
                 <Show
                     when=move || editing_comment.get()

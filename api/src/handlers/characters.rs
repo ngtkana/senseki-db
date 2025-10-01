@@ -24,6 +24,7 @@ pub async fn list(State(state): State<AppState>) -> impl IntoResponse {
                     id: c.id,
                     name: c.name,
                     name_en: c.name_en,
+                    fighter_key: c.fighter_key,
                 })
                 .collect();
             (StatusCode::OK, Json(response)).into_response()
@@ -51,6 +52,7 @@ pub async fn get(State(state): State<AppState>, Path(id): Path<i32>) -> impl Int
                 id: c.id,
                 name: c.name,
                 name_en: c.name_en,
+                fighter_key: c.fighter_key,
             };
             (StatusCode::OK, Json(response)).into_response()
         }

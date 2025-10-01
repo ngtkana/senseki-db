@@ -8,104 +8,119 @@ impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         let db = manager.get_connection();
 
-        // まず全てのキャラクターにユニークな仮の値を設定
-        db.execute_unprepared("UPDATE characters SET name_en = 'temp_' || id::text")
+        // fighter_keyカラム追加
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Characters::Table)
+                    .add_column(
+                        ColumnDef::new(Characters::FighterKey)
+                            .string_len(50)
+                            .not_null()
+                            .default(""),
+                    )
+                    .to_owned(),
+            )
             .await?;
 
-        // キャラクター英語名を更新
+        // まず全てのキャラクターにユニークな仮の値を設定
+        db.execute_unprepared("UPDATE characters SET fighter_key = 'temp_key_' || id::text")
+            .await?;
+
+        // キャラクター情報を更新（CSVベース）
         let updates = vec![
-            ("マリオ", "Mario"),
-            ("ドンキーコング", "Donkey Kong"),
-            ("リンク", "Link"),
-            ("サムス", "Samus"),
-            ("ダークサムス", "Dark Samus"),
-            ("ヨッシー", "Yoshi"),
-            ("カービィ", "Kirby"),
-            ("フォックス", "Fox"),
-            ("ピカチュウ", "Pikachu"),
-            ("ルイージ", "Luigi"),
-            ("ネス", "Ness"),
-            ("キャプテン・ファルコン", "Captain Falcon"),
-            ("プリン", "Jigglypuff"),
-            ("ピーチ", "Peach"),
-            ("デイジー", "Daisy"),
-            ("クッパ", "Bowser"),
-            ("アイスクライマー", "Ice Climbers"),
-            ("シーク", "Sheik"),
-            ("ゼルダ", "Zelda"),
-            ("ドクターマリオ", "Dr. Mario"),
-            ("ピチュー", "Pichu"),
-            ("ファルコ", "Falco"),
-            ("マルス", "Marth"),
-            ("ルキナ", "Lucina"),
-            ("こどもリンク", "Young Link"),
-            ("ガノンドロフ", "Ganondorf"),
-            ("ミュウツー", "Mewtwo"),
-            ("ロイ", "Roy"),
-            ("クロム", "Chrom"),
-            ("Mr.ゲーム&ウォッチ", "Mr. Game & Watch"),
-            ("メタナイト", "Meta Knight"),
-            ("ピット", "Pit"),
-            ("ブラックピット", "Dark Pit"),
-            ("ゼロスーツサムス", "Zero Suit Samus"),
-            ("ワリオ", "Wario"),
-            ("スネーク", "Snake"),
-            ("アイク", "Ike"),
-            ("ポケモントレーナー", "Pokemon Trainer"),
-            ("ディディーコング", "Diddy Kong"),
-            ("リュカ", "Lucas"),
-            ("ソニック", "Sonic"),
-            ("デデデ", "King Dedede"),
-            ("ピクミン&オリマー", "Olimar"),
-            ("ルカリオ", "Lucario"),
-            ("ロボット", "R.O.B."),
-            ("トゥーンリンク", "Toon Link"),
-            ("ウルフ", "Wolf"),
-            ("むらびと", "Villager"),
-            ("ロックマン", "Mega Man"),
-            ("Wii Fit トレーナー", "Wii Fit Trainer"),
-            ("ロゼッタ&チコ", "Rosalina & Luma"),
-            ("リトル・マック", "Little Mac"),
-            ("ゲッコウガ", "Greninja"),
-            ("Miiファイター(格闘)", "Mii Brawler"),
-            ("Miiファイター(剣術)", "Mii Swordfighter"),
-            ("Miiファイター(射撃)", "Mii Gunner"),
-            ("パルテナ", "Palutena"),
-            ("パックマン", "Pac-Man"),
-            ("ルフレ", "Robin"),
-            ("シュルク", "Shulk"),
-            ("クッパJr.", "Bowser Jr."),
-            ("ダックハント", "Duck Hunt"),
-            ("リュウ", "Ryu"),
-            ("ケン", "Ken"),
-            ("クラウド", "Cloud"),
-            ("カムイ", "Corrin"),
-            ("ベヨネッタ", "Bayonetta"),
-            ("インクリング", "Inkling"),
-            ("リドリー", "Ridley"),
-            ("シモン", "Simon"),
-            ("リヒター", "Richter"),
-            ("キングクルール", "King K. Rool"),
-            ("しずえ", "Isabelle"),
-            ("ガオガエン", "Incineroar"),
-            ("パックンフラワー", "Piranha Plant"),
-            ("ジョーカー", "Joker"),
-            ("勇者", "Hero"),
-            ("バンジョー&カズーイ", "Banjo & Kazooie"),
-            ("テリー", "Terry"),
-            ("ベレト/ベレス", "Byleth"),
-            ("ミェンミェン", "Min Min"),
-            ("スティーブ/アレックス", "Steve"),
-            ("セフィロス", "Sephiroth"),
-            ("ホムラ/ヒカリ", "Pyra/Mythra"),
-            ("カズヤ", "Kazuya"),
-            ("ソラ", "Sora"),
+            ("マリオ", "Mario", "mario"),
+            ("ドンキーコング", "Donkey Kong", "donkey"),
+            ("リンク", "Link", "link"),
+            ("サムス", "Samus", "samus"),
+            ("ダークサムス", "Dark Samus", "samusd"),
+            ("ヨッシー", "Yoshi", "yoshi"),
+            ("カービィ", "Kirby", "kirby"),
+            ("フォックス", "Fox", "fox"),
+            ("ピカチュウ", "Pikachu", "pikachu"),
+            ("ルイージ", "Luigi", "luigi"),
+            ("ネス", "Ness", "ness"),
+            ("キャプテン・ファルコン", "Captain Falcon", "captain"),
+            ("プリン", "Jigglypuff", "purin"),
+            ("ピーチ", "Peach", "peach"),
+            ("デイジー", "Daisy", "daisy"),
+            ("クッパ", "Bowser", "koopa"),
+            ("アイスクライマー", "Ice Climbers", "popo"),
+            ("シーク", "Sheik", "sheik"),
+            ("ゼルダ", "Zelda", "zelda"),
+            ("ドクターマリオ", "Dr. Mario", "mariod"),
+            ("ピチュー", "Pichu", "pichu"),
+            ("ファルコ", "Falco", "falco"),
+            ("マルス", "Marth", "marth"),
+            ("ルキナ", "Lucina", "lucina"),
+            ("こどもリンク", "Young Link", "younglink"),
+            ("ガノンドロフ", "Ganondorf", "ganon"),
+            ("ミュウツー", "Mewtwo", "mewtwo"),
+            ("ロイ", "Roy", "roy"),
+            ("クロム", "Chrom", "chrom"),
+            ("Mr.ゲーム&ウォッチ", "Mr. Game & Watch", "gamewatch"),
+            ("メタナイト", "Meta Knight", "metaknight"),
+            ("ピット", "Pit", "pit"),
+            ("ブラックピット", "Dark Pit", "pitb"),
+            ("ゼロスーツサムス", "Zero Suit Samus", "szerosuit"),
+            ("ワリオ", "Wario", "wario"),
+            ("スネーク", "Snake", "snake"),
+            ("アイク", "Ike", "ike"),
+            ("ポケモントレーナー", "Pokemon Trainer", "pzenigame"),
+            ("ディディーコング", "Diddy Kong", "diddy"),
+            ("リュカ", "Lucas", "lucas"),
+            ("ソニック", "Sonic", "sonic"),
+            ("デデデ", "King Dedede", "dedede"),
+            ("ピクミン&オリマー", "Olimar", "pikmin"),
+            ("ルカリオ", "Lucario", "lucario"),
+            ("ロボット", "R.O.B.", "robot"),
+            ("トゥーンリンク", "Toon Link", "toonlink"),
+            ("ウルフ", "Wolf", "wolf"),
+            ("むらびと", "Villager", "murabito"),
+            ("ロックマン", "Mega Man", "rockman"),
+            ("Wii Fit トレーナー", "Wii Fit Trainer", "wiifit"),
+            ("ロゼッタ&チコ", "Rosalina & Luma", "rosetta"),
+            ("リトル・マック", "Little Mac", "littlemac"),
+            ("ゲッコウガ", "Greninja", "gekkouga"),
+            ("Miiファイター(格闘)", "Mii Brawler", "miifighter"),
+            ("Miiファイター(剣術)", "Mii Swordfighter", "miiswordsman"),
+            ("Miiファイター(射撃)", "Mii Gunner", "miigunner"),
+            ("パルテナ", "Palutena", "palutena"),
+            ("パックマン", "PAC-MAN", "pacman"),
+            ("ルフレ", "Robin", "reflet"),
+            ("シュルク", "Shulk", "shulk"),
+            ("クッパJr.", "Bowser Jr.", "koopajr"),
+            ("ダックハント", "Duck Hunt", "duckhunt"),
+            ("リュウ", "Ryu", "ryu"),
+            ("ケン", "Ken", "ken"),
+            ("クラウド", "Cloud", "cloud"),
+            ("カムイ", "Corrin", "kamui"),
+            ("ベヨネッタ", "Bayonetta", "bayonetta"),
+            ("インクリング", "Inkling", "inkling"),
+            ("リドリー", "Ridley", "ridley"),
+            ("シモン", "Simon", "simon"),
+            ("リヒター", "Richter", "richter"),
+            ("キングクルール", "King K. Rool", "krool"),
+            ("しずえ", "Isabelle", "shizue"),
+            ("ガオガエン", "Incineroar", "gaogaen"),
+            ("パックンフラワー", "Piranha Plant", "packun"),
+            ("ジョーカー", "Joker", "jack"),
+            ("勇者", "Hero", "brave"),
+            ("バンジョー&カズーイ", "Banjo & Kazooie", "buddy"),
+            ("テリー", "Terry", "dolly"),
+            ("ベレト/ベレス", "Byleth", "master"),
+            ("ミェンミェン", "Min Min", "tantan"),
+            ("スティーブ/アレックス", "Steve", "pickel"),
+            ("セフィロス", "Sephiroth", "edge"),
+            ("ホムラ/ヒカリ", "Pyra/Mythra", "eflame"),
+            ("カズヤ", "Kazuya", "demon"),
+            ("ソラ", "Sora", "trail"),
         ];
 
-        for (name_jp, name_en) in updates {
+        for (name_jp, name_en, fighter_key) in updates {
             db.execute_unprepared(&format!(
-                "UPDATE characters SET name_en = '{}' WHERE name = '{}'",
-                name_en, name_jp
+                "UPDATE characters SET name_en = '{}', fighter_key = '{}' WHERE name = '{}'",
+                name_en, fighter_key, name_jp
             ))
             .await?;
         }
@@ -122,6 +137,18 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // fighter_keyにユニーク制約を追加
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_characters_fighter_key")
+                    .table(Characters::Table)
+                    .col(Characters::FighterKey)
+                    .unique()
+                    .to_owned(),
+            )
+            .await?;
+
         Ok(())
     }
 
@@ -129,8 +156,17 @@ impl MigrationTrait for Migration {
         manager
             .drop_index(
                 Index::drop()
-                    .name("idx_characters_name_en")
+                    .name("idx_characters_fighter_key")
                     .table(Characters::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Characters::Table)
+                    .drop_column(Characters::FighterKey)
                     .to_owned(),
             )
             .await?;
@@ -143,4 +179,5 @@ impl MigrationTrait for Migration {
 enum Characters {
     Table,
     NameEn,
+    FighterKey,
 }

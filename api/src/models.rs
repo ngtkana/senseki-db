@@ -77,4 +77,5 @@ pub struct CharacterResponse {
     pub id: i32,
     pub name: String,
     pub name_en: String,
+    pub fighter_key: String,
 }
