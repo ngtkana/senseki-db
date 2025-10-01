@@ -13,7 +13,6 @@ pub fn MatchItem(
     on_match_deleted: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
     let initial_comment = match_data.comment.clone().unwrap_or_default();
-    let (editing_comment, set_editing_comment) = signal(false);
     let (editing_char, set_editing_char) = signal(false);
     let (editing_opp, set_editing_opp) = signal(false);
     let (editing_result, set_editing_result) = signal(false);
@@ -53,7 +52,7 @@ pub fn MatchItem(
 
     let match_id = match_data.id;
 
-    let save_comment = move |should_close: bool| {
+    let save_comment = move |_should_close: bool| {
         let new_comment = comment_value.get();
         spawn_local(async move {
             let req = UpdateMatchRequest {
@@ -65,9 +64,6 @@ pub fn MatchItem(
             match api::update_match(match_id, req).await {
                 Ok(_) => {
                     logging::log!("コメント更新成功");
-                    if should_close {
-                        set_editing_comment.set(false);
-                    }
                 }
                 Err(e) => {
                     logging::error!("コメント更新失敗: {}", e);
@@ -278,40 +274,13 @@ pub fn MatchItem(
                     </Show>
                 </div>
 
-                <Show
-                    when=move || editing_comment.get()
-                    fallback=move || {
-                        view! {
-                            <div
-                                class="match-comment editable"
-                                on:click=move |_| set_editing_comment.set(true)
-                            >
-                                {move || {
-                                    let c = comment_value.get();
-                                    if c.is_empty() { "コメントを追加...".to_string() } else { c }
-                                }}
-                            </div>
-                        }
-                    }
-                >
-                    <input
-                        type="text"
-                        class="match-comment-input"
-                        value=comment_value
-                        on:input=move |ev| set_comment_value.set(event_target_value(&ev))
-                        on:blur=move |_| {
-                            save_comment(true);
-                        }
-                        on:keydown=move |ev: leptos::web_sys::KeyboardEvent| {
-                            if ev.key() == "Enter" {
-                                save_comment(true);
-                            } else if ev.key() == "Escape" {
-                                set_editing_comment.set(false);
-                            }
-                        }
-                        autofocus
-                    />
-                </Show>
+                <input
+                    type="text"
+                    class="match-comment-input"
+                    value=comment_value
+                    on:input=move |ev| set_comment_value.set(event_target_value(&ev))
+                    on:blur=move |_| save_comment(false)
+                />
 
                 <Show
                     when=move || editing_result.get()

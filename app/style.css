@@ -225,90 +225,50 @@ body {
     margin-bottom: 8px;
 }
 
-.session-date-label {
-    font-size: 20px;
-    font-weight: 600;
-    cursor: text;
-    padding: 4px 8px;
-    border-radius: 3px;
-    transition: background 0.2s;
-}
-
-.session-date-label.editable:hover {
-    background: var(--bg-hover);
-}
-
 .session-date-input {
     padding: 4px 8px;
-    border: 1px solid var(--border);
+    border: none;
     font-size: 20px;
     font-weight: 600;
     font-family: inherit;
-    border-radius: 3px;
+    background: transparent;
 }
 
 .session-date-input:focus {
     outline: none;
-    border-color: var(--text-primary);
-}
-
-.session-title-edit {
-    font-size: 20px;
-    font-weight: 600;
-    cursor: text;
-    padding: 4px 8px;
-    border-radius: 3px;
-    transition: background 0.2s;
-    flex: 1;
-}
-
-.session-title-edit.editable:hover {
     background: var(--bg-hover);
 }
 
 .session-title-input {
     flex: 1;
     padding: 4px 8px;
-    border: 1px solid var(--border);
+    border: none;
     font-size: 20px;
     font-weight: 600;
     font-family: inherit;
-    border-radius: 3px;
+    background: transparent;
 }
 
 .session-title-input:focus {
     outline: none;
-    border-color: var(--text-primary);
-}
-
-.session-notes-edit {
-    color: var(--text-secondary);
-    font-size: 14px;
-    cursor: text;
-    padding: 4px 8px;
-    border-radius: 3px;
-    transition: background 0.2s;
-    min-height: 24px;
-}
-
-.session-notes-edit.editable:hover {
     background: var(--bg-hover);
 }
 
 .session-notes-input {
     width: 100%;
     padding: 4px 8px;
-    border: 1px solid var(--border);
+    border: none;
     font-size: 14px;
     font-family: inherit;
-    border-radius: 3px;
+    background: transparent;
     min-height: 60px;
     resize: vertical;
+    color: var(--text-primary);
 }
 
 .session-notes-input:focus {
     outline: none;
-    border-color: var(--text-primary);
+    background: var(--bg-hover);
 }
 
 .empty-state {
@@ -407,39 +367,19 @@ body {
     margin: 0 4px;
 }
 
-.match-comment {
-    font-size: 13px;
-    color: var(--text-secondary);
-    font-style: italic;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.match-comment.editable {
-    cursor: text;
-    padding: 4px 8px;
-    border-radius: 3px;
-    transition: background 0.2s;
-}
-
-.match-comment.editable:hover {
-    background: var(--bg-hover);
-}
-
 .match-comment-input {
     flex: 1;
     padding: 4px 8px;
-    border: 1px solid var(--border);
+    border: none;
     font-size: 13px;
     font-family: inherit;
-    border-radius: 3px;
+    background: transparent;
+    color: var(--text-primary);
 }
 
 .match-comment-input:focus {
     outline: none;
-    border-color: var(--text-primary);
+    background: var(--bg-hover);
 }
 
 .match-result {
