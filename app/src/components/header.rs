@@ -2,6 +2,38 @@ use leptos::prelude::*;
 
 use crate::api::Character;
 
+fn normalize_for_search(s: &str) -> String {
+    s.to_lowercase()
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect()
+}
+
+fn matches_search(character: &Character, query: &str) -> bool {
+    if query.is_empty() {
+        return true;
+    }
+
+    let normalized_query = normalize_for_search(query);
+
+    // 日本語名で検索
+    if normalize_for_search(&character.name).contains(&normalized_query) {
+        return true;
+    }
+
+    // 英語名で検索
+    if normalize_for_search(&character.name_en).contains(&normalized_query) {
+        return true;
+    }
+
+    // fighter_keyでも検索（内部キー）
+    if normalize_for_search(&character.fighter_key).contains(&normalized_query) {
+        return true;
+    }
+
+    false
+}
+
 #[component]
 pub fn Header(
     characters: ReadSignal<Vec<Character>>,
@@ -9,12 +41,37 @@ pub fn Header(
     on_character_select: impl Fn(i32) + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
     let (show_dropdown, set_show_dropdown) = signal(false);
+    let (search_query, set_search_query) = signal(String::new());
+    let input_ref = NodeRef::<leptos::html::Input>::new();
 
     let selected_character = move || {
         selected_character_id
             .get()
             .and_then(|id| characters.get().iter().find(|c| c.id == id).cloned())
     };
+
+    // フィルタリングされたキャラクターリスト
+    let filtered_characters = move || {
+        let query = search_query.get();
+        let mut chars = characters.get();
+        let filtered: Vec<_> = chars
+            .iter()
+            .filter(|c| matches_search(c, &query))
+            .cloned()
+            .collect();
+        filtered
+    };
+
+    // ドロップダウンを開いたときに入力欄にフォーカス
+    Effect::new(move || {
+        if show_dropdown.get() {
+            if let Some(input) = input_ref.get() {
+                let _ = input.focus();
+            }
+        } else {
+            set_search_query.set(String::new());
+        }
+    });
 
     view! {
         <header class="header">
@@ -48,9 +105,21 @@ pub fn Header(
                             on:click=move |e| e.stop_propagation()
                         >
                             <div class="dropdown-header">"使用キャラを選択"</div>
+                            <div class="dropdown-search">
+                                <input
+                                    type="text"
+                                    class="search-input"
+                                    placeholder="キャラ名で検索..."
+                                    value=move || search_query.get()
+                                    on:input=move |ev| {
+                                        set_search_query.set(event_target_value(&ev));
+                                    }
+                                    node_ref=input_ref
+                                />
+                            </div>
                             <div class="character-grid">
                             {move || {
-                                let mut chars = characters.get();
+                                let mut chars = filtered_characters();
                                 chars.sort_by_key(|c| c.id);
                                 chars
                                     .iter()

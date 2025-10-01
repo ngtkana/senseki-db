@@ -103,6 +103,32 @@ body {
     font-size: 14px;
 }
 
+.dropdown-search {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.dropdown-search .search-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--bg-secondary);
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.dropdown-search .search-input:focus {
+    outline: none;
+    border-color: var(--text-primary);
+    background: var(--bg-primary);
+}
+
+.dropdown-search .search-input::placeholder {
+    color: var(--text-tertiary);
+}
+
 .character-grid {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
