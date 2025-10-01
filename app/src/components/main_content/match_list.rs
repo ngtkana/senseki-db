@@ -91,7 +91,10 @@ pub fn MatchList(
     let update_draft_opponent = move |opp_id: i32| {
         if let Some(mut draft) = draft_match.get() {
             draft.opponent_character_id = Some(opp_id);
-            set_draft_match.set(Some(draft));
+            // 相手キャラが選択されたら自動的に確定
+            if let Some(char_id) = draft.character_id {
+                save_draft_match(char_id, opp_id, draft.result.clone(), draft.comment.clone());
+            }
         }
     };
 
@@ -262,7 +265,6 @@ fn DraftMatchItem(
     let (editing_char, set_editing_char) = signal(draft.character_id.is_none());
     let (editing_opp, set_editing_opp) = signal(false);
     let (dropdown_pos, set_dropdown_pos) = signal((0.0, 0.0));
-    let (show_menu, set_show_menu) = signal(false);
 
     let characters_for_dropdown = characters.clone();
     let mut characters_sorted = characters_for_dropdown.clone();
@@ -311,6 +313,15 @@ fn DraftMatchItem(
     view! {
         <div class="match-item draft-match">
             <div class="match-row">
+                <input
+                    type="checkbox"
+                    class="match-checkbox"
+                    checked=false
+                    on:click=move |ev| {
+                        ev.stop_propagation();
+                        on_cancel();
+                    }
+                />
                 <div class="match-number"></div>
                 <div class="match-characters">
                     <Show when=move || editing_char.get()>
@@ -488,15 +499,9 @@ fn DraftMatchItem(
                 <input
                     type="text"
                     class="match-comment-input"
-                    placeholder="コメント（任意）またはEnterで確定"
                     value=draft_comment
                     on:input=move |ev| {
                         on_comment_change(event_target_value(&ev));
-                    }
-                    on:keydown=move |ev| {
-                        if ev.key() == "Enter" {
-                            on_confirm();
-                        }
                     }
                 />
 
@@ -535,25 +540,6 @@ fn DraftMatchItem(
                     >
                         "×"
                     </button>
-                </div>
-
-                <div class="match-menu">
-                    <button
-                        class="menu-button"
-                        on:click=move |_| set_show_menu.set(!show_menu.get())
-                    >
-                        "⋮"
-                    </button>
-                    <Show when=move || show_menu.get()>
-                        <div class="menu-dropdown">
-                            <button class="menu-item delete" on:click=move |_| {
-                                set_show_menu.set(false);
-                                on_cancel();
-                            }>
-                                "削除"
-                            </button>
-                        </div>
-                    </Show>
                 </div>
             </div>
         </div>
