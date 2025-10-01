@@ -31,6 +31,15 @@ pub struct CreateMatchRequest {
     pub comment: Option<String>,
 }
 
+// マッチ更新リクエスト
+#[derive(Debug, Deserialize)]
+pub struct UpdateMatchRequest {
+    pub character_id: Option<i32>,
+    pub opponent_character_id: Option<i32>,
+    pub result: Option<String>,
+    pub comment: Option<String>,
+}
+
 // マッチレスポンス
 #[derive(Debug, Serialize)]
 pub struct MatchResponse {

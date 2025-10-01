@@ -1,6 +1,6 @@
 use axum::{
     response::IntoResponse,
-    routing::{get, post},
+    routing::{get, post, put},
     Json, Router,
 };
 use sea_orm::{Database, DatabaseConnection};
@@ -59,6 +59,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/sessions/{id}", get(sessions::get))
         // マッチ
         .route("/api/matches", post(matches::create))
+        .route("/api/matches/{id}", put(matches::update))
         .route(
             "/api/sessions/{session_id}/matches",
             get(matches::list_by_session),

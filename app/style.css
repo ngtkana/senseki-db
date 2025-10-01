@@ -49,9 +49,28 @@ body {
     font-weight: 600;
 }
 
-.header-actions {
+.header-character {
     display: flex;
+    align-items: center;
     gap: 8px;
+}
+
+.header-character label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.character-select {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    background: var(--bg-primary);
+    cursor: pointer;
+}
+
+.character-select:focus {
+    outline: none;
+    border-color: var(--text-primary);
 }
 
 /* Main Layout */
@@ -189,6 +208,31 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.match-comment.editable {
+    cursor: text;
+    padding: 4px 8px;
+    border-radius: 3px;
+    transition: background 0.2s;
+}
+
+.match-comment.editable:hover {
+    background: var(--bg-hover);
+}
+
+.match-comment-input {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-family: inherit;
+    border-radius: 3px;
+}
+
+.match-comment-input:focus {
+    outline: none;
+    border-color: var(--text-primary);
 }
 
 .match-result {

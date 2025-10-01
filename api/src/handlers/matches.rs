@@ -8,7 +8,7 @@ use entity::{matches, prelude::*};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set};
 
 use crate::{
-    models::{CreateMatchRequest, MatchResponse},
+    models::{CreateMatchRequest, MatchResponse, UpdateMatchRequest},
     AppState,
 };
 
@@ -70,6 +70,91 @@ pub async fn create(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(serde_json::json!({
                     "error": "Failed to create match"
+                })),
+            )
+                .into_response()
+        }
+    }
+}
+
+// マッチ更新
+pub async fn update(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+    Json(req): Json<UpdateMatchRequest>,
+) -> impl IntoResponse {
+    // 既存のマッチを取得
+    let existing_match = Matches::find_by_id(id).one(&state.db).await;
+
+    match existing_match {
+        Ok(Some(match_record)) => {
+            let mut active_match: matches::ActiveModel = match_record.into();
+
+            // 更新するフィールドのみ設定
+            if let Some(character_id) = req.character_id {
+                active_match.character_id = Set(character_id);
+            }
+            if let Some(opponent_character_id) = req.opponent_character_id {
+                active_match.opponent_character_id = Set(opponent_character_id);
+            }
+            if let Some(result) = req.result {
+                active_match.result = Set(result);
+            }
+            if let Some(comment) = req.comment {
+                active_match.comment = Set(Some(comment));
+            }
+
+            match active_match.update(&state.db).await {
+                Ok(updated_match) => {
+                    // キャラクター名を取得
+                    let character = Characters::find_by_id(updated_match.character_id)
+                        .one(&state.db)
+                        .await
+                        .ok()
+                        .flatten();
+                    let opponent = Characters::find_by_id(updated_match.opponent_character_id)
+                        .one(&state.db)
+                        .await
+                        .ok()
+                        .flatten();
+
+                    let response = MatchResponse {
+                        id: updated_match.id,
+                        session_id: updated_match.session_id,
+                        character_name: character.map(|c| c.name).unwrap_or_default(),
+                        opponent_character_name: opponent.map(|c| c.name).unwrap_or_default(),
+                        result: updated_match.result,
+                        match_order: updated_match.match_order,
+                        comment: updated_match.comment,
+                    };
+
+                    (StatusCode::OK, Json(response)).into_response()
+                }
+                Err(e) => {
+                    tracing::error!("Failed to update match: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(serde_json::json!({
+                            "error": "Failed to update match"
+                        })),
+                    )
+                        .into_response()
+                }
+            }
+        }
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "error": "Match not found"
+            })),
+        )
+            .into_response(),
+        Err(e) => {
+            tracing::error!("Failed to fetch match: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "error": "Failed to fetch match"
                 })),
             )
                 .into_response()

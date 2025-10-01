@@ -5,7 +5,9 @@ use leptos::web_sys;
 
 mod api;
 
-use api::{Character, CreateMatchRequest, CreateSessionRequest, Match, Session};
+use api::{
+    Character, CreateMatchRequest, CreateSessionRequest, Match, Session, UpdateMatchRequest,
+};
 
 fn main() {
     console_error_panic_hook::set_once();
@@ -18,6 +20,7 @@ fn App() -> impl IntoView {
     let (sessions, set_sessions) = signal(Vec::<Session>::new());
     let (characters, set_characters) = signal(Vec::<Character>::new());
     let (selected_session_id, set_selected_session_id) = signal(Option::<i32>::None);
+    let (selected_character_id, set_selected_character_id) = signal(Option::<i32>::None);
     let (loading, set_loading) = signal(true);
 
     // 初回データ取得
@@ -39,9 +42,17 @@ fn App() -> impl IntoView {
         });
     };
 
+    let handle_character_select = move |id: i32| {
+        set_selected_character_id.set(Some(id));
+    };
+
     view! {
         <div class="app">
-            <Header/>
+            <Header
+                characters=characters
+                selected_character_id=selected_character_id
+                on_character_select=handle_character_select
+            />
 
             <div class="app-main">
                 <Sidebar
@@ -56,6 +67,7 @@ fn App() -> impl IntoView {
                     sessions=sessions
                     characters=characters
                     selected_session_id=selected_session_id
+                    selected_character_id=selected_character_id
                 />
             </div>
 
@@ -74,10 +86,44 @@ fn App() -> impl IntoView {
 }
 
 #[component]
-fn Header() -> impl IntoView {
+fn Header(
+    characters: ReadSignal<Vec<Character>>,
+    selected_character_id: ReadSignal<Option<i32>>,
+    on_character_select: impl Fn(i32) + 'static + Copy,
+) -> impl IntoView {
     view! {
         <header class="header">
             <h1>"スマブラSP 戦績管理"</h1>
+            <div class="header-character">
+                <label>"使用キャラ: "</label>
+                <select
+                    class="character-select"
+                    on:change=move |ev| {
+                        let id = event_target_value(&ev).parse().unwrap_or(0);
+                        if id > 0 {
+                            on_character_select(id);
+                        }
+                    }
+                >
+
+                    <option value="0">"選択してください"</option>
+                    {move || {
+                        characters
+                            .get()
+                            .iter()
+                            .map(|c| {
+                                let is_selected = selected_character_id.get() == Some(c.id);
+                                view! {
+                                    <option value=c.id selected=is_selected>
+                                        {c.name.clone()}
+                                    </option>
+                                }
+                            })
+                            .collect_view()
+                    }}
+
+                </select>
+            </div>
         </header>
     }
 }
@@ -152,6 +198,7 @@ fn MainContent(
     sessions: ReadSignal<Vec<Session>>,
     characters: ReadSignal<Vec<Character>>,
     selected_session_id: ReadSignal<Option<i32>>,
+    selected_character_id: ReadSignal<Option<i32>>,
 ) -> impl IntoView {
     let (matches, set_matches) = signal(Vec::<Match>::new());
     let (loading_matches, set_loading_matches) = signal(false);
@@ -228,6 +275,7 @@ fn MainContent(
                                                         session_id=session_id
                                                         matches=matches
                                                         characters=characters
+                                                        selected_character_id=selected_character_id
                                                         on_match_added=reload_matches
                                                     />
                                                 }
@@ -257,6 +305,7 @@ fn MatchList(
     session_id: i32,
     matches: ReadSignal<Vec<Match>>,
     characters: ReadSignal<Vec<Character>>,
+    selected_character_id: ReadSignal<Option<i32>>,
     on_match_added: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
     let (adding, set_adding) = signal(false);
@@ -286,6 +335,7 @@ fn MatchList(
                         <InlineMatchForm
                             session_id=session_id
                             characters=characters
+                            selected_character_id=selected_character_id
                             on_submit=move || {
                                 set_adding.set(false);
                                 on_match_added();
@@ -307,6 +357,10 @@ fn MatchList(
 
 #[component]
 fn MatchItem(match_data: Match, char_name: String, opp_name: String) -> impl IntoView {
+    let initial_comment = match_data.comment.clone().unwrap_or_default();
+    let (editing_comment, set_editing_comment) = signal(false);
+    let (comment_value, set_comment_value) = signal(initial_comment.clone());
+
     let result_class = if match_data.result == "win" {
         "win"
     } else {
@@ -318,16 +372,70 @@ fn MatchItem(match_data: Match, char_name: String, opp_name: String) -> impl Int
         "×"
     };
 
+    let match_id = match_data.id;
+
+    let save_comment = move |should_close: bool| {
+        let new_comment = comment_value.get();
+        spawn_local(async move {
+            let req = UpdateMatchRequest {
+                character_id: None,
+                opponent_character_id: None,
+                result: None,
+                comment: Some(new_comment),
+            };
+            match api::update_match(match_id, req).await {
+                Ok(_) => {
+                    logging::log!("コメント更新成功");
+                    if should_close {
+                        set_editing_comment.set(false);
+                    }
+                }
+                Err(e) => {
+                    logging::error!("コメント更新失敗: {}", e);
+                }
+            }
+        });
+    };
+
     view! {
         <div class="match-item">
             <div class="match-row">
                 <div class="match-characters">{format!("{} vs {}", char_name, opp_name)}</div>
-                {match_data
-                    .comment
-                    .as_ref()
-                    .map(|c| {
-                        view! { <div class="match-comment">{c.clone()}</div> }
-                    })}
+
+                <Show
+                    when=move || editing_comment.get()
+                    fallback=move || {
+                        view! {
+                            <div
+                                class="match-comment editable"
+                                on:click=move |_| set_editing_comment.set(true)
+                            >
+                                {move || {
+                                    let c = comment_value.get();
+                                    if c.is_empty() { "コメントを追加...".to_string() } else { c }
+                                }}
+                            </div>
+                        }
+                    }
+                >
+                    <input
+                        type="text"
+                        class="match-comment-input"
+                        value=comment_value
+                        on:input=move |ev| set_comment_value.set(event_target_value(&ev))
+                        on:blur=move |_| {
+                            save_comment(true);
+                        }
+                        on:keydown=move |ev: web_sys::KeyboardEvent| {
+                            if ev.key() == "Enter" {
+                                save_comment(true);
+                            } else if ev.key() == "Escape" {
+                                set_editing_comment.set(false);
+                            }
+                        }
+                        autofocus
+                    />
+                </Show>
 
                 <div class=format!("match-result {}", result_class)>{result_symbol}</div>
             </div>
@@ -339,10 +447,11 @@ fn MatchItem(match_data: Match, char_name: String, opp_name: String) -> impl Int
 fn InlineMatchForm(
     session_id: i32,
     characters: ReadSignal<Vec<Character>>,
+    selected_character_id: ReadSignal<Option<i32>>,
     on_submit: impl Fn() + 'static + Copy,
     on_cancel: impl Fn() + 'static + Copy,
 ) -> impl IntoView {
-    let (character_id, set_character_id) = signal(0);
+    let (character_id, set_character_id) = signal(selected_character_id.get().unwrap_or(0));
     let (opponent_id, set_opponent_id) = signal(0);
     let (result, set_result) = signal(String::from("win"));
     let (comment, set_comment) = signal(String::new());
@@ -397,12 +506,22 @@ fn InlineMatchForm(
                             }
                         >
 
-                            <option value="0">"選択"</option>
+                            <option value="0" selected=move || character_id.get() == 0>
+                                "選択"
+                            </option>
                             {move || {
                                 characters
                                     .get()
                                     .iter()
-                                    .map(|c| view! { <option value=c.id>{c.name.clone()}</option> })
+                                    .map(|c| {
+                                        let char_id = c.id;
+                                        let is_selected = move || character_id.get() == char_id;
+                                        view! {
+                                            <option value=char_id selected=is_selected>
+                                                {c.name.clone()}
+                                            </option>
+                                        }
+                                    })
                                     .collect_view()
                             }}
 

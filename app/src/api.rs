@@ -51,6 +51,14 @@ pub struct CreateMatchRequest {
     pub comment: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct UpdateMatchRequest {
+    pub character_id: Option<i32>,
+    pub opponent_character_id: Option<i32>,
+    pub result: Option<String>,
+    pub comment: Option<String>,
+}
+
 // GSP記録
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GspRecord {
@@ -119,6 +127,19 @@ pub async fn fetch_matches(session_id: i32) -> Result<Vec<Match>, String> {
 pub async fn create_match(req: CreateMatchRequest) -> Result<Match, String> {
     let url = format!("{}/matches", API_BASE);
     Request::post(&url)
+        .json(&req)
+        .map_err(|e| format!("JSON serialize failed: {}", e))?
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?
+        .json()
+        .await
+        .map_err(|e| format!("JSON parse failed: {}", e))
+}
+
+pub async fn update_match(match_id: i32, req: UpdateMatchRequest) -> Result<Match, String> {
+    let url = format!("{}/matches/{}", API_BASE, match_id);
+    Request::put(&url)
         .json(&req)
         .map_err(|e| format!("JSON serialize failed: {}", e))?
         .send()
