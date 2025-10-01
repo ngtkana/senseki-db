@@ -38,6 +38,7 @@ pub async fn list(State(state): State<AppState>) -> impl IntoResponse {
                 response.push(SessionResponse {
                     id: session.id,
                     session_date: session.session_date,
+                    title: session.title,
                     notes: session.notes,
                     match_count,
                     wins,
@@ -80,6 +81,7 @@ pub async fn get(State(state): State<AppState>, Path(id): Path<i32>) -> impl Int
             let response = SessionResponse {
                 id: session.id,
                 session_date: session.session_date,
+                title: session.title,
                 notes: session.notes,
                 match_count,
                 wins,
@@ -115,6 +117,7 @@ pub async fn create(
 ) -> impl IntoResponse {
     let new_session = sessions::ActiveModel {
         session_date: Set(req.session_date),
+        title: Set(req.title),
         notes: Set(req.notes),
         ..Default::default()
     };
@@ -124,6 +127,7 @@ pub async fn create(
             let response = SessionResponse {
                 id: session.id,
                 session_date: session.session_date,
+                title: session.title,
                 notes: session.notes,
                 match_count: 0,
                 wins: 0,

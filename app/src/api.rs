@@ -8,6 +8,7 @@ const API_BASE: &str = "http://127.0.0.1:3000/api";
 pub struct Character {
     pub id: i32,
     pub name: String,
+    pub name_en: String,
 }
 
 // セッション
@@ -15,6 +16,7 @@ pub struct Character {
 pub struct Session {
     pub id: i32,
     pub session_date: String,
+    pub title: Option<String>,
     pub notes: Option<String>,
     pub match_count: i64,
     pub wins: i64,
@@ -24,6 +26,7 @@ pub struct Session {
 #[derive(Debug, Serialize)]
 pub struct CreateSessionRequest {
     pub session_date: String,
+    pub title: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -36,8 +39,6 @@ pub struct Match {
     pub opponent_character_name: String,
     pub result: String,
     pub match_order: i32,
-    pub gsp_before: Option<i32>,
-    pub gsp_after: Option<i32>,
     pub comment: Option<String>,
 }
 
@@ -47,9 +48,25 @@ pub struct CreateMatchRequest {
     pub character_id: i32,
     pub opponent_character_id: i32,
     pub result: String,
-    pub gsp_before: Option<i32>,
-    pub gsp_after: Option<i32>,
     pub comment: Option<String>,
+}
+
+// GSP記録
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GspRecord {
+    pub id: i32,
+    pub session_id: i32,
+    pub match_order: i32,
+    pub gsp: i32,
+    pub note: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreateGspRecordRequest {
+    pub session_id: i32,
+    pub match_order: i32,
+    pub gsp: i32,
+    pub note: Option<String>,
 }
 
 // API関数
@@ -101,6 +118,30 @@ pub async fn fetch_matches(session_id: i32) -> Result<Vec<Match>, String> {
 
 pub async fn create_match(req: CreateMatchRequest) -> Result<Match, String> {
     let url = format!("{}/matches", API_BASE);
+    Request::post(&url)
+        .json(&req)
+        .map_err(|e| format!("JSON serialize failed: {}", e))?
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?
+        .json()
+        .await
+        .map_err(|e| format!("JSON parse failed: {}", e))
+}
+
+pub async fn fetch_gsp_records(session_id: i32) -> Result<Vec<GspRecord>, String> {
+    let url = format!("{}/sessions/{}/gsp_records", API_BASE, session_id);
+    Request::get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?
+        .json()
+        .await
+        .map_err(|e| format!("JSON parse failed: {}", e))
+}
+
+pub async fn create_gsp_record(req: CreateGspRecordRequest) -> Result<GspRecord, String> {
+    let url = format!("{}/gsp_records", API_BASE);
     Request::post(&url)
         .json(&req)
         .map_err(|e| format!("JSON serialize failed: {}", e))?

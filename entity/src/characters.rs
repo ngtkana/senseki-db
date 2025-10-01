@@ -12,6 +12,8 @@ pub struct Model {
     pub name: String,
     pub created_at: DateTime,
     pub updated_at: DateTime,
+    #[sea_orm(unique)]
+    pub name_en: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

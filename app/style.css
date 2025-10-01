@@ -105,6 +105,23 @@ body {
     color: var(--text-tertiary);
 }
 
+.add-session-button {
+    width: 100%;
+    padding: 12px;
+    border: 1px dashed var(--border-dark);
+    background: var(--bg-secondary);
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 14px;
+    border-top: 1px solid var(--border);
+}
+
+.add-session-button:hover {
+    background: var(--bg-hover);
+    border-color: var(--text-secondary);
+}
+
 /* Main Content */
 .main-content {
     padding: 24px;
@@ -152,21 +169,33 @@ body {
     background: var(--bg-secondary);
 }
 
-.match-header {
+.match-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
+    gap: 12px;
 }
 
 .match-characters {
     font-weight: 600;
     font-size: 14px;
+    flex-shrink: 0;
+}
+
+.match-comment {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .match-result {
     font-size: 18px;
     font-weight: 600;
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 .match-result.win {
@@ -175,20 +204,6 @@ body {
 
 .match-result.loss {
     color: var(--text-tertiary);
-}
-
-.match-details {
-    font-size: 13px;
-    color: var(--text-secondary);
-    display: flex;
-    gap: 16px;
-}
-
-.match-comment {
-    margin-top: 6px;
-    font-size: 13px;
-    color: var(--text-secondary);
-    font-style: italic;
 }
 
 /* Add Match Button */

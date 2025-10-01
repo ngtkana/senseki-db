@@ -13,12 +13,21 @@ pub struct Model {
     pub notes: Option<String>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
+    pub title: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(has_many = "super::gsp_records::Entity")]
+    GspRecords,
     #[sea_orm(has_many = "super::matches::Entity")]
     Matches,
+}
+
+impl Related<super::gsp_records::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::GspRecords.def()
+    }
 }
 
 impl Related<super::matches::Entity> for Entity {

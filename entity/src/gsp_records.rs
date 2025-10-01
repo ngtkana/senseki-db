@@ -4,39 +4,20 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "matches")]
+#[sea_orm(table_name = "gsp_records")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub session_id: i32,
-    pub character_id: i32,
-    pub opponent_character_id: i32,
-    pub result: String,
     pub match_order: i32,
+    pub gsp: i32,
     #[sea_orm(column_type = "Text", nullable)]
-    pub comment: Option<String>,
-    pub created_at: DateTime,
-    pub updated_at: DateTime,
+    pub note: Option<String>,
+    pub created_at: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::characters::Entity",
-        from = "Column::CharacterId",
-        to = "super::characters::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
-    Characters2,
-    #[sea_orm(
-        belongs_to = "super::characters::Entity",
-        from = "Column::OpponentCharacterId",
-        to = "super::characters::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
-    Characters1,
     #[sea_orm(
         belongs_to = "super::sessions::Entity",
         from = "Column::SessionId",

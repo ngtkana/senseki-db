@@ -41,13 +41,14 @@ fn App() -> impl IntoView {
 
     view! {
         <div class="app">
-            <Header on_new_session=move || set_show_session_modal.set(true)/>
+            <Header/>
 
             <div class="app-main">
                 <Sidebar
                     sessions=sessions
                     selected_session_id=selected_session_id
                     on_select=move |id| set_selected_session_id.set(Some(id))
+                    on_new_session=move || set_show_session_modal.set(true)
                     loading=loading
                 />
 
@@ -73,15 +74,10 @@ fn App() -> impl IntoView {
 }
 
 #[component]
-fn Header(on_new_session: impl Fn() + 'static + Copy) -> impl IntoView {
+fn Header() -> impl IntoView {
     view! {
         <header class="header">
             <h1>"スマブラSP 戦績管理"</h1>
-            <div class="header-actions">
-                <button class="btn btn-primary" on:click=move |_| on_new_session()>
-                    "+ セッション"
-                </button>
-            </div>
         </header>
     }
 }
@@ -91,6 +87,7 @@ fn Sidebar(
     sessions: ReadSignal<Vec<Session>>,
     selected_session_id: ReadSignal<Option<i32>>,
     on_select: impl Fn(i32) + 'static + Copy + Send,
+    on_new_session: impl Fn() + 'static + Copy + Send,
     loading: ReadSignal<bool>,
 ) -> impl IntoView {
     view! {
@@ -115,12 +112,19 @@ fn Sidebar(
                                             class:selected=is_selected
                                             on:click=move |_| on_select(session_id)
                                         >
-                                            <div class="session-date">{session.session_date.clone()}</div>
+                                            <div class="session-date">
+                                                {session.session_date.clone()}
+                                                {session
+                                                    .title
+                                                    .as_ref()
+                                                    .map(|t| format!(" {}", t))
+                                                    .unwrap_or_default()}
+                                            </div>
                                             <div class="session-note">
                                                 {session
                                                     .notes
                                                     .clone()
-                                                    .unwrap_or_else(|| "メモなし".to_string())}
+                                                    .unwrap_or_else(|| "".to_string())}
                                             </div>
                                             <div class="session-stats">
                                                 {format!("{}勝 {}敗", session.wins, session.losses)}
@@ -129,6 +133,10 @@ fn Sidebar(
                                     }
                                 })
                                 .collect_view()}
+
+                            <button class="add-session-button" on:click=move |_| on_new_session()>
+                                "+ セッション"
+                            </button>
                         </div>
                     }
                         .into_any()
@@ -194,7 +202,14 @@ fn MainContent(
                                 view! {
                                     <div>
                                         <div class="content-header">
-                                            <h2>{format!("{} の戦績", s.session_date)}</h2>
+                                            <h2>
+                                                {s.session_date.clone()}
+                                                {s
+                                                    .title
+                                                    .as_ref()
+                                                    .map(|t| format!(" {}", t))
+                                                    .unwrap_or_default()}
+                                            </h2>
                                             {s
                                                 .notes
                                                 .map(|note| {
@@ -305,27 +320,17 @@ fn MatchItem(match_data: Match, char_name: String, opp_name: String) -> impl Int
 
     view! {
         <div class="match-item">
-            <div class="match-header">
+            <div class="match-row">
                 <div class="match-characters">{format!("{} vs {}", char_name, opp_name)}</div>
-                <div class=format!("match-result {}", result_class)>{result_symbol}</div>
-            </div>
-            <div class="match-details">
                 {match_data
-                    .gsp_before
-                    .map(|gsp| {
-                        let gsp_after = match_data.gsp_after.unwrap_or(gsp);
-                        view! {
-                            <span>
-                                {format!("{} → {}", gsp, gsp_after)}
-                            </span>
-                        }
+                    .comment
+                    .as_ref()
+                    .map(|c| {
+                        view! { <div class="match-comment">{c.clone()}</div> }
                     })}
 
+                <div class=format!("match-result {}", result_class)>{result_symbol}</div>
             </div>
-            {match_data
-                .comment
-                .map(|c| view! { <div class="match-comment">{c}</div> })}
-
         </div>
     }
 }
@@ -340,8 +345,6 @@ fn InlineMatchForm(
     let (character_id, set_character_id) = signal(0);
     let (opponent_id, set_opponent_id) = signal(0);
     let (result, set_result) = signal(String::from("win"));
-    let (gsp_before, set_gsp_before) = signal(String::new());
-    let (gsp_after, set_gsp_after) = signal(String::new());
     let (comment, set_comment) = signal(String::new());
     let (loading, set_loading) = signal(false);
 
@@ -360,8 +363,6 @@ fn InlineMatchForm(
             character_id: character_id.get(),
             opponent_character_id: opponent_id.get(),
             result: result.get(),
-            gsp_before: gsp_before.get().parse().ok(),
-            gsp_after: gsp_after.get().parse().ok(),
             comment: if comment.get().is_empty() {
                 None
             } else {
@@ -455,29 +456,6 @@ fn InlineMatchForm(
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>"GSP（開始）"</label>
-                        <input
-                            type="number"
-                            class="form-input"
-                            placeholder="10000000"
-                            on:input=move |ev| set_gsp_before.set(event_target_value(&ev))
-                            prop:value=gsp_before
-                        />
-                    </div>
-                    <div class="form-group">
-                        <label>"GSP（終了）"</label>
-                        <input
-                            type="number"
-                            class="form-input"
-                            placeholder="10050000"
-                            on:input=move |ev| set_gsp_after.set(event_target_value(&ev))
-                            prop:value=gsp_after
-                        />
-                    </div>
-                </div>
-
                 <div class="form-group">
                     <label>"コメント"</label>
                     <textarea
@@ -517,6 +495,7 @@ fn Modal(on_close: impl Fn() + 'static + Copy, children: Children) -> impl IntoV
 
 #[component]
 fn SessionForm(on_submit: impl Fn() + 'static + Copy) -> impl IntoView {
+    let (title, set_title) = signal(String::new());
     let (notes, set_notes) = signal(String::new());
     let (loading, set_loading) = signal(false);
 
@@ -524,10 +503,16 @@ fn SessionForm(on_submit: impl Fn() + 'static + Copy) -> impl IntoView {
         ev.prevent_default();
         set_loading.set(true);
 
+        let title_value = title.get();
         let notes_value = notes.get();
         spawn_local(async move {
             let req = CreateSessionRequest {
                 session_date: chrono::Local::now().format("%Y-%m-%d").to_string(),
+                title: if title_value.is_empty() {
+                    None
+                } else {
+                    Some(title_value)
+                },
                 notes: if notes_value.is_empty() {
                     None
                 } else {
@@ -562,10 +547,20 @@ fn SessionForm(on_submit: impl Fn() + 'static + Copy) -> impl IntoView {
                     />
                 </div>
                 <div class="form-group">
+                    <label>"タイトル"</label>
+                    <input
+                        type="text"
+                        class="form-input"
+                        placeholder="今日の目標"
+                        on:input=move |ev| set_title.set(event_target_value(&ev))
+                        prop:value=title
+                    />
+                </div>
+                <div class="form-group">
                     <label>"メモ"</label>
                     <textarea
                         class="form-input"
-                        placeholder="今日の目標や気をつけること..."
+                        placeholder="気をつけること..."
                         on:input=move |ev| set_notes.set(event_target_value(&ev))
                         prop:value=notes
                     />

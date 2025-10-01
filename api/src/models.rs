@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Deserialize)]
 pub struct CreateSessionRequest {
     pub session_date: NaiveDate,
+    pub title: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -13,6 +14,7 @@ pub struct CreateSessionRequest {
 pub struct SessionResponse {
     pub id: i32,
     pub session_date: NaiveDate,
+    pub title: Option<String>,
     pub notes: Option<String>,
     pub match_count: i64,
     pub wins: i64,
@@ -26,8 +28,6 @@ pub struct CreateMatchRequest {
     pub character_id: i32,
     pub opponent_character_id: i32,
     pub result: String, // "win" or "loss"
-    pub gsp_before: Option<i32>,
-    pub gsp_after: Option<i32>,
     pub comment: Option<String>,
 }
 
@@ -40,9 +40,26 @@ pub struct MatchResponse {
     pub opponent_character_name: String,
     pub result: String,
     pub match_order: i32,
-    pub gsp_before: Option<i32>,
-    pub gsp_after: Option<i32>,
     pub comment: Option<String>,
+}
+
+// GSP記録作成リクエスト
+#[derive(Debug, Deserialize)]
+pub struct CreateGspRecordRequest {
+    pub session_id: i32,
+    pub match_order: i32,
+    pub gsp: i32,
+    pub note: Option<String>,
+}
+
+// GSP記録レスポンス
+#[derive(Debug, Serialize)]
+pub struct GspRecordResponse {
+    pub id: i32,
+    pub session_id: i32,
+    pub match_order: i32,
+    pub gsp: i32,
+    pub note: Option<String>,
 }
 
 // キャラクターレスポンス
@@ -50,4 +67,5 @@ pub struct MatchResponse {
 pub struct CharacterResponse {
     pub id: i32,
     pub name: String,
+    pub name_en: String,
 }

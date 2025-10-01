@@ -11,7 +11,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod handlers;
 mod models;
 
-use handlers::{characters, matches, sessions};
+use handlers::{characters, gsp_records, matches, sessions};
 
 #[derive(Clone)]
 struct AppState {
@@ -62,6 +62,12 @@ async fn main() -> anyhow::Result<()> {
         .route(
             "/api/sessions/{session_id}/matches",
             get(matches::list_by_session),
+        )
+        // GSP記録
+        .route("/api/gsp_records", post(gsp_records::create))
+        .route(
+            "/api/sessions/{session_id}/gsp_records",
+            get(gsp_records::list_by_session),
         )
         .layer(cors)
         .with_state(state);

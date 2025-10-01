@@ -23,6 +23,7 @@ pub async fn list(State(state): State<AppState>) -> impl IntoResponse {
                 .map(|c| CharacterResponse {
                     id: c.id,
                     name: c.name,
+                    name_en: c.name_en,
                 })
                 .collect();
             (StatusCode::OK, Json(response)).into_response()
@@ -49,6 +50,7 @@ pub async fn get(State(state): State<AppState>, Path(id): Path<i32>) -> impl Int
             let response = CharacterResponse {
                 id: c.id,
                 name: c.name,
+                name_en: c.name_en,
             };
             (StatusCode::OK, Json(response)).into_response()
         }

@@ -2,6 +2,8 @@ pub use sea_orm_migration::prelude::*;
 
 mod m20220101_000001_create_table;
 mod m20220101_000002_seed_characters;
+mod m20250102_000001_schema_update;
+mod m20250102_000002_update_character_names;
 
 pub struct Migrator;
 
@@ -11,6 +13,8 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20220101_000001_create_table::Migration),
             Box::new(m20220101_000002_seed_characters::Migration),
+            Box::new(m20250102_000001_schema_update::Migration),
+            Box::new(m20250102_000002_update_character_names::Migration),
         ]
     }
 }

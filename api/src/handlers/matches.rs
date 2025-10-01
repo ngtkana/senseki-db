@@ -34,8 +34,6 @@ pub async fn create(
         opponent_character_id: Set(req.opponent_character_id),
         result: Set(req.result),
         match_order: Set(max_order + 1),
-        gsp_before: Set(req.gsp_before),
-        gsp_after: Set(req.gsp_after),
         comment: Set(req.comment),
         ..Default::default()
     };
@@ -61,8 +59,6 @@ pub async fn create(
                 opponent_character_name: opponent.map(|c| c.name).unwrap_or_default(),
                 result: match_record.result,
                 match_order: match_record.match_order,
-                gsp_before: match_record.gsp_before,
-                gsp_after: match_record.gsp_after,
                 comment: match_record.comment,
             };
 
@@ -116,8 +112,6 @@ pub async fn list_by_session(
                     opponent_character_name: opponent.map(|c| c.name).unwrap_or_default(),
                     result: match_record.result,
                     match_order: match_record.match_order,
-                    gsp_before: match_record.gsp_before,
-                    gsp_after: match_record.gsp_after,
                     comment: match_record.comment,
                 });
             }
