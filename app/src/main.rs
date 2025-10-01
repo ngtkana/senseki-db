@@ -68,7 +68,7 @@ fn App() -> impl IntoView {
     });
 
     let reload_sessions = move || {
-        let current_selected = selected_session_id.get();
+        let current_selected = selected_session_id.get_untracked();
         spawn_local(async move {
             if let Ok(mut data) = api::fetch_sessions().await {
                 // 新しい順にソート

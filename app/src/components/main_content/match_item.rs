@@ -15,13 +15,12 @@ pub fn MatchItem(
     characters: Vec<Character>,
     is_selected: bool,
     on_match_clicked: impl Fn(bool, bool) + 'static + Copy + Send + Sync,
-    on_match_deleted: impl Fn() + 'static + Copy + Send + Sync,
+    _on_match_deleted: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
     let initial_comment = match_data.comment.clone().unwrap_or_default();
     let (editing_char, set_editing_char) = signal(false);
     let (editing_opp, set_editing_opp) = signal(false);
     let (comment_value, set_comment_value) = signal(initial_comment.clone());
-    let (show_menu, set_show_menu) = signal(false);
     let (dropdown_pos, set_dropdown_pos) = signal((0.0, 0.0));
 
     let char_id = characters
@@ -144,31 +143,20 @@ pub fn MatchItem(
     let mut characters_for_opp_select = characters.clone();
     characters_for_opp_select.sort_by_key(|c| c.id);
 
-    let handle_delete = move || {
-        set_show_menu.set(false);
-        spawn_local(async move {
-            match api::delete_match(match_id).await {
-                Ok(_) => {
-                    logging::log!("マッチ削除成功");
-                    on_match_deleted();
-                }
-                Err(e) => {
-                    logging::error!("マッチ削除失敗: {}", e);
-                }
-            }
-        });
-    };
-
     view! {
-        <div
-            class=move || if is_selected { "match-item selected" } else { "match-item" }
-            on:click=move |ev| {
-                let shift_key = ev.shift_key();
-                let ctrl_key = ev.ctrl_key() || ev.meta_key();
-                on_match_clicked(shift_key, ctrl_key);
-            }
-        >
+        <div class=move || if is_selected { "match-item selected" } else { "match-item" }>
             <div class="match-row">
+                <input
+                    type="checkbox"
+                    class="match-checkbox"
+                    checked=is_selected
+                    on:click=move |ev| {
+                        ev.stop_propagation();
+                        let shift_key = ev.shift_key();
+                        let ctrl_key = ev.ctrl_key() || ev.meta_key();
+                        on_match_clicked(shift_key, ctrl_key);
+                    }
+                />
                 <div class="match-number">{match_number}</div>
                 <div class="match-characters">
                     <Show when=move || editing_char.get()>
@@ -351,21 +339,6 @@ pub fn MatchItem(
                     </button>
                 </div>
 
-                <div class="match-menu">
-                    <button
-                        class="menu-button"
-                        on:click=move |_| set_show_menu.set(!show_menu.get())
-                    >
-                        "⋮"
-                    </button>
-                    <Show when=move || show_menu.get()>
-                        <div class="menu-dropdown">
-                            <button class="menu-item delete" on:click=move |_| handle_delete()>
-                                "削除"
-                            </button>
-                        </div>
-                    </Show>
-                </div>
             </div>
         </div>
     }

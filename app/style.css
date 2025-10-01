@@ -256,37 +256,39 @@ body {
 
 .session-gsp-row {
     display: flex;
-    gap: 16px;
-    margin-bottom: 8px;
-}
-
-.gsp-input-group {
-    display: flex;
     align-items: center;
     gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
 }
 
-.gsp-input-group label {
-    font-size: 13px;
+.gsp-label {
     font-weight: 500;
     color: var(--text-secondary);
-    white-space: nowrap;
 }
 
 .gsp-input {
-    width: 120px;
+    width: 110px;
     padding: 4px 8px;
-    border: 1px solid var(--border);
+    border: none;
     font-size: 13px;
-    font-family: inherit;
-    background: var(--bg-primary);
+    font-family: 'Courier New', monospace;
+    background: transparent;
     color: var(--text-primary);
 }
 
 .gsp-input:focus {
     outline: none;
-    border-color: var(--text-primary);
     background: var(--bg-hover);
+}
+
+.gsp-input-invalid {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.gsp-input-invalid:focus {
+    background: #ffcdd2;
 }
 
 .session-notes-input {
@@ -324,23 +326,27 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px;
+    padding: 6px 12px;
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
+    font-size: 13px;
 }
 
 .selected-count {
-    font-weight: 600;
-    color: var(--text-primary);
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.match-list-header .btn-danger {
+    padding: 4px 12px;
+    font-size: 13px;
 }
 
 .match-item {
     padding: 8px 12px;
     border: 1px solid var(--border);
     background: var(--bg-primary);
-    cursor: pointer;
-    user-select: none;
 }
 
 .match-item:hover {
@@ -368,7 +374,14 @@ body {
 .match-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+}
+
+.match-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 .match-number {

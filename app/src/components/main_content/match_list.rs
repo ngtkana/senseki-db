@@ -144,9 +144,13 @@ pub fn MatchList(
             }
             set_last_selected_index.set(Some(index));
         } else {
-            // 通常クリック: 選択解除
-            selected.clear();
-            set_last_selected_index.set(None);
+            // 通常クリック: トグル選択
+            if selected.contains(&match_id) {
+                selected.remove(&match_id);
+            } else {
+                selected.insert(match_id);
+            }
+            set_last_selected_index.set(Some(index));
         }
 
         set_selected_matches.set(selected);
@@ -208,7 +212,7 @@ pub fn MatchList(
                                 characters=chars.clone()
                                 is_selected=is_selected
                                 on_match_clicked=move |shift, ctrl| handle_match_click(match_id, index, shift, ctrl)
-                                on_match_deleted=on_match_added
+                                _on_match_deleted=on_match_added
                             />
                         }
                     })
@@ -293,13 +297,13 @@ fn DraftMatchItem(
     let draft_result_4 = draft.result.clone();
     let draft_comment = draft.comment.clone();
 
-    let comment_ref = NodeRef::<leptos::html::Input>::new();
+    let opp_ref = NodeRef::<leptos::html::Div>::new();
 
-    // 両方のキャラが選択されたらコメント欄にフォーカス
+    // 自キャラが選択されたら相手キャラ選択にフォーカス
     Effect::new(move || {
-        if draft_char_id.is_some() && draft_opp_id.is_some() {
-            if let Some(input) = comment_ref.get() {
-                let _ = input.focus();
+        if draft_char_id.is_some() && draft_opp_id.is_none() {
+            if let Some(div_elem) = opp_ref.get() {
+                let _ = div_elem.click();
             }
         }
     });
@@ -431,6 +435,7 @@ fn DraftMatchItem(
                             }
                             set_editing_opp.set(true);
                         }
+                        node_ref=opp_ref
                     >
                         {move || {
                             if let Some((name, key)) = get_opp_info(draft_opp_id) {
@@ -465,7 +470,6 @@ fn DraftMatchItem(
                             on_confirm();
                         }
                     }
-                    node_ref=comment_ref
                 />
 
                 <div class="result-buttons">

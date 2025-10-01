@@ -12,18 +12,50 @@ pub fn SessionHeader(
     on_session_updated: impl Fn() + 'static + Copy + Send + Sync,
     _version: ReadSignal<i32>,
 ) -> impl IntoView {
+    let format_gsp = |num: i32| -> String {
+        num.to_string()
+            .as_bytes()
+            .rchunks(3)
+            .rev()
+            .map(std::str::from_utf8)
+            .collect::<Result<Vec<&str>, _>>()
+            .unwrap()
+            .join(",")
+    };
+
     let initial_date = session.session_date.clone();
     let initial_title = session.title.clone().unwrap_or_default();
     let initial_notes = session.notes.clone().unwrap_or_default();
-    let initial_start_gsp = session.start_gsp.map(|g| g.to_string()).unwrap_or_default();
-    let initial_end_gsp = session.end_gsp.map(|g| g.to_string()).unwrap_or_default();
+    let initial_start_gsp = session.start_gsp.map(|g| format_gsp(g)).unwrap_or_default();
+    let initial_end_gsp = session.end_gsp.map(|g| format_gsp(g)).unwrap_or_default();
 
     let (date_value, set_date_value) = signal(initial_date.clone());
     let (title_value, set_title_value) = signal(initial_title.clone());
     let (notes_value, set_notes_value) = signal(initial_notes.clone());
     let (start_gsp_value, set_start_gsp_value) = signal(initial_start_gsp.clone());
     let (end_gsp_value, set_end_gsp_value) = signal(initial_end_gsp.clone());
+    let (start_gsp_invalid, set_start_gsp_invalid) = signal(false);
+    let (end_gsp_invalid, set_end_gsp_invalid) = signal(false);
     let textarea_ref = NodeRef::<leptos::html::Textarea>::new();
+
+    // セッションが変わったら値をリセット
+    Effect::new(move || {
+        _version.track();
+        set_date_value.set(session.session_date.clone());
+        set_title_value.set(session.title.clone().unwrap_or_default());
+        set_notes_value.set(session.notes.clone().unwrap_or_default());
+        set_start_gsp_value.set(session.start_gsp.map(&format_gsp).unwrap_or_default());
+        set_end_gsp_value.set(session.end_gsp.map(&format_gsp).unwrap_or_default());
+        set_start_gsp_invalid.set(false);
+        set_end_gsp_invalid.set(false);
+
+        // textareaの値も直接更新
+        if let Some(textarea) = textarea_ref.get() {
+            if let Some(textarea_el) = textarea.dyn_ref::<web_sys::HtmlTextAreaElement>() {
+                textarea_el.set_value(&session.notes.clone().unwrap_or_default());
+            }
+        }
+    });
 
     // 初期表示時とnotes_valueが変更されたときに高さを調整
     Effect::new(move || {
@@ -119,15 +151,24 @@ pub fn SessionHeader(
 
     let save_start_gsp = move |_should_close: bool| {
         let new_gsp_str = start_gsp_value.get();
+        let numbers_only: String = new_gsp_str.chars().filter(|c| c.is_numeric()).collect();
+
+        // バリデーション: 空でない場合はパース可能かチェック
+        if !numbers_only.is_empty() && numbers_only.parse::<i32>().is_err() {
+            set_start_gsp_invalid.set(true);
+            return;
+        }
+
+        set_start_gsp_invalid.set(false);
         spawn_local(async move {
             let req = api::UpdateSessionRequest {
                 session_date: None,
                 title: None,
                 notes: None,
-                start_gsp: Some(if new_gsp_str.is_empty() {
+                start_gsp: Some(if numbers_only.is_empty() {
                     None
                 } else {
-                    new_gsp_str.parse::<i32>().ok()
+                    numbers_only.parse::<i32>().ok()
                 }),
                 end_gsp: None,
             };
@@ -137,7 +178,16 @@ pub fn SessionHeader(
                     set_start_gsp_value.set(
                         updated_session
                             .start_gsp
-                            .map(|g| g.to_string())
+                            .map(|g| {
+                                g.to_string()
+                                    .as_bytes()
+                                    .rchunks(3)
+                                    .rev()
+                                    .map(std::str::from_utf8)
+                                    .collect::<Result<Vec<&str>, _>>()
+                                    .unwrap()
+                                    .join(",")
+                            })
                             .unwrap_or_default(),
                     );
                     on_session_updated();
@@ -151,16 +201,25 @@ pub fn SessionHeader(
 
     let save_end_gsp = move |_should_close: bool| {
         let new_gsp_str = end_gsp_value.get();
+        let numbers_only: String = new_gsp_str.chars().filter(|c| c.is_numeric()).collect();
+
+        // バリデーション: 空でない場合はパース可能かチェック
+        if !numbers_only.is_empty() && numbers_only.parse::<i32>().is_err() {
+            set_end_gsp_invalid.set(true);
+            return;
+        }
+
+        set_end_gsp_invalid.set(false);
         spawn_local(async move {
             let req = api::UpdateSessionRequest {
                 session_date: None,
                 title: None,
                 notes: None,
                 start_gsp: None,
-                end_gsp: Some(if new_gsp_str.is_empty() {
+                end_gsp: Some(if numbers_only.is_empty() {
                     None
                 } else {
-                    new_gsp_str.parse::<i32>().ok()
+                    numbers_only.parse::<i32>().ok()
                 }),
             };
             match api::update_session(session_id, req).await {
@@ -169,7 +228,16 @@ pub fn SessionHeader(
                     set_end_gsp_value.set(
                         updated_session
                             .end_gsp
-                            .map(|g| g.to_string())
+                            .map(|g| {
+                                g.to_string()
+                                    .as_bytes()
+                                    .rchunks(3)
+                                    .rev()
+                                    .map(std::str::from_utf8)
+                                    .collect::<Result<Vec<&str>, _>>()
+                                    .unwrap()
+                                    .join(",")
+                            })
                             .unwrap_or_default(),
                     );
                     on_session_updated();
@@ -202,28 +270,104 @@ pub fn SessionHeader(
             </div>
 
             <div class="session-gsp-row">
-                <div class="gsp-input-group">
-                    <label>"開始GSP:"</label>
-                    <input
-                        type="number"
-                        class="gsp-input"
-                        placeholder="例: 12000000"
-                        value=start_gsp_value
-                        on:input=move |ev| set_start_gsp_value.set(event_target_value(&ev))
-                        on:blur=move |_| save_start_gsp(false)
-                    />
-                </div>
-                <div class="gsp-input-group">
-                    <label>"終了GSP:"</label>
-                    <input
-                        type="number"
-                        class="gsp-input"
-                        placeholder="例: 12500000"
-                        value=end_gsp_value
-                        on:input=move |ev| set_end_gsp_value.set(event_target_value(&ev))
-                        on:blur=move |_| save_end_gsp(false)
-                    />
-                </div>
+                <span class="gsp-label">"開始時:"</span>
+                <input
+                    type="text"
+                    class=move || if start_gsp_invalid.get() { "gsp-input gsp-input-invalid" } else { "gsp-input" }
+                    value=start_gsp_value
+                    on:input=move |ev| {
+                        let val = event_target_value(&ev);
+
+                        // 空文字列は許可
+                        if val.is_empty() {
+                            set_start_gsp_value.set(String::new());
+                            set_start_gsp_invalid.set(false);
+                            return;
+                        }
+
+                        // 数字とカンマのみ許可
+                        if !val.chars().all(|c| c.is_numeric() || c == ',') {
+                            set_start_gsp_invalid.set(true);
+                            return;
+                        }
+
+                        // カンマを除去して数値のみ取得
+                        let numbers_only: String = val.chars().filter(|c| c.is_numeric()).collect();
+
+                        // パース可能かチェック
+                        if let Ok(num) = numbers_only.parse::<i32>() {
+                            // 正しいフォーマットに整形
+                            let formatted = num.to_string()
+                                .as_bytes()
+                                .rchunks(3)
+                                .rev()
+                                .map(std::str::from_utf8)
+                                .collect::<Result<Vec<&str>, _>>()
+                                .unwrap()
+                                .join(",");
+
+                            // 入力値が正しいフォーマットかチェック
+                            if val == formatted {
+                                set_start_gsp_value.set(formatted);
+                                set_start_gsp_invalid.set(false);
+                            } else {
+                                set_start_gsp_invalid.set(true);
+                            }
+                        } else {
+                            set_start_gsp_invalid.set(true);
+                        }
+                    }
+                    on:blur=move |_| save_start_gsp(false)
+                />
+                <span class="gsp-label">"終了時:"</span>
+                <input
+                    type="text"
+                    class=move || if end_gsp_invalid.get() { "gsp-input gsp-input-invalid" } else { "gsp-input" }
+                    value=end_gsp_value
+                    on:input=move |ev| {
+                        let val = event_target_value(&ev);
+
+                        // 空文字列は許可
+                        if val.is_empty() {
+                            set_end_gsp_value.set(String::new());
+                            set_end_gsp_invalid.set(false);
+                            return;
+                        }
+
+                        // 数字とカンマのみ許可
+                        if !val.chars().all(|c| c.is_numeric() || c == ',') {
+                            set_end_gsp_invalid.set(true);
+                            return;
+                        }
+
+                        // カンマを除去して数値のみ取得
+                        let numbers_only: String = val.chars().filter(|c| c.is_numeric()).collect();
+
+                        // パース可能かチェック
+                        if let Ok(num) = numbers_only.parse::<i32>() {
+                            // 正しいフォーマットに整形
+                            let formatted = num.to_string()
+                                .as_bytes()
+                                .rchunks(3)
+                                .rev()
+                                .map(std::str::from_utf8)
+                                .collect::<Result<Vec<&str>, _>>()
+                                .unwrap()
+                                .join(",");
+
+                            // 入力値が正しいフォーマットかチェック
+                            if val == formatted {
+                                set_end_gsp_value.set(formatted);
+                                set_end_gsp_invalid.set(false);
+                            } else {
+                                set_end_gsp_invalid.set(true);
+                            }
+                        } else {
+                            set_end_gsp_invalid.set(true);
+                        }
+                    }
+                    on:blur=move |_| save_end_gsp(false)
+                />
             </div>
 
             <textarea
