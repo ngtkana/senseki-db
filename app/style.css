@@ -197,7 +197,7 @@ body {
     cursor: pointer;
     color: var(--text-secondary);
     font-size: 14px;
-    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
 
 .add-session-button:hover {
@@ -261,9 +261,10 @@ body {
     font-size: 14px;
     font-family: inherit;
     background: transparent;
-    min-height: 60px;
-    resize: vertical;
+    min-height: 24px;
+    resize: none;
     color: var(--text-primary);
+    overflow: hidden;
 }
 
 .session-notes-input:focus {
@@ -284,14 +285,40 @@ body {
     gap: 4px;
 }
 
+.match-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+}
+
+.selected-count {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
 .match-item {
     padding: 8px 12px;
     border: 1px solid var(--border);
     background: var(--bg-primary);
+    cursor: pointer;
+    user-select: none;
 }
 
 .match-item:hover {
     background: var(--bg-secondary);
+}
+
+.match-item.selected {
+    background: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.match-item.selected:hover {
+    background: #bbdefb;
 }
 
 .match-item.draft-match {
@@ -307,6 +334,15 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.match-number {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    min-width: 24px;
+    text-align: right;
+    flex-shrink: 0;
 }
 
 .match-characters {
@@ -372,21 +408,49 @@ body {
     height: 24px;
 }
 
-.result-select {
-    padding: 4px 8px;
-    border: 1px solid var(--border);
-    font-size: 14px;
-    font-family: inherit;
-    border-radius: 3px;
+.result-buttons {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
 }
 
-.result-select:focus {
-    outline: none;
-    border-color: var(--text-primary);
-}
-
-.match-result.editable {
+.result-btn {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border);
+    background: var(--bg-secondary);
+    font-size: 18px;
+    font-weight: 600;
     cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.result-btn:hover {
+    border-color: var(--text-secondary);
+}
+
+.result-btn-win.active {
+    background: #4caf50;
+    color: white;
+    border-color: #4caf50;
+}
+
+.result-btn-loss.active {
+    background: #f44336;
+    color: white;
+    border-color: #f44336;
+}
+
+.result-btn:not(.active) {
+    opacity: 0.4;
+}
+
+.result-btn:not(.active):hover {
+    opacity: 0.7;
 }
 
 .character-icon {
