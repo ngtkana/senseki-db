@@ -173,6 +173,3 @@ psql -h 127.0.0.1 -U postgres -d senseki -f schema.sql
 - [ ] 統計・分析機能の実装
 - [ ] エクスポート機能（CSV/テキスト）
 
-## ライセンス
-
-MIT
