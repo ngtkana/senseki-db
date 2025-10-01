@@ -1,3 +1,4 @@
+mod character_autocomplete;
 mod match_item;
 mod match_list;
 mod session_header;
@@ -8,6 +9,7 @@ use leptos::task::spawn_local;
 
 use crate::api::{Character, Match, Session};
 
+pub use character_autocomplete::CharacterAutocomplete;
 pub use match_list::MatchList;
 pub use session_header::SessionHeader;
 

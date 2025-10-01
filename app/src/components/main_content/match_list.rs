@@ -7,6 +7,7 @@ use std::collections::HashSet;
 
 use crate::api::{self, Character, CreateMatchRequest, Match};
 
+use super::character_autocomplete::CharacterAutocomplete;
 use super::match_item::MatchItem;
 
 #[derive(Clone, Debug)]
@@ -98,9 +99,14 @@ pub fn MatchList(
         }
     };
 
-    let update_draft_result = move |result: String| {
+    let flip_draft_result = move || {
         if let Some(mut draft) = draft_match.get() {
-            draft.result = result;
+            // flip: 勝ち→負け、負け→勝ち、空→勝ち
+            draft.result = match draft.result.as_str() {
+                "win" => "loss".to_string(),
+                "loss" => "win".to_string(),
+                _ => "win".to_string(),
+            };
             set_draft_match.set(Some(draft));
         }
     };
@@ -233,9 +239,9 @@ pub fn MatchList(
                             characters=chars
                             on_character_select=update_draft_character
                             on_opponent_select=update_draft_opponent
-                            on_result_change=update_draft_result
+                            on_result_change=flip_draft_result
                             on_comment_change=update_draft_comment
-                            on_confirm=confirm_draft
+                            _on_confirm=confirm_draft
                             on_cancel=cancel_draft
                         />
                     }
@@ -257,40 +263,11 @@ fn DraftMatchItem(
     characters: Vec<Character>,
     on_character_select: impl Fn(i32) + 'static + Copy + Send + Sync,
     on_opponent_select: impl Fn(i32) + 'static + Copy + Send + Sync,
-    on_result_change: impl Fn(String) + 'static + Copy + Send + Sync,
+    on_result_change: impl Fn() + 'static + Copy + Send + Sync,
     on_comment_change: impl Fn(String) + 'static + Copy + Send + Sync,
-    on_confirm: impl Fn() + 'static + Copy + Send + Sync,
+    _on_confirm: impl Fn() + 'static + Copy + Send + Sync,
     on_cancel: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
-    let (editing_char, set_editing_char) = signal(draft.character_id.is_none());
-    let (editing_opp, set_editing_opp) = signal(false);
-    let (dropdown_pos, set_dropdown_pos) = signal((0.0, 0.0));
-
-    let characters_for_dropdown = characters.clone();
-    let mut characters_sorted = characters_for_dropdown.clone();
-    characters_sorted.sort_by_key(|c| c.id);
-    let characters_sorted_2 = characters_sorted.clone();
-
-    let characters_for_char_info = characters.clone();
-    let get_char_info = move |id: Option<i32>| {
-        id.and_then(|id| {
-            characters_for_char_info
-                .iter()
-                .find(|c| c.id == id)
-                .map(|c| (c.name.clone(), c.fighter_key.clone()))
-        })
-    };
-
-    let characters_for_opp_info = characters.clone();
-    let get_opp_info = move |id: Option<i32>| {
-        id.and_then(|id| {
-            characters_for_opp_info
-                .iter()
-                .find(|c| c.id == id)
-                .map(|c| (c.name.clone(), c.fighter_key.clone()))
-        })
-    };
-
     let draft_char_id = draft.character_id;
     let draft_opp_id = draft.opponent_character_id;
     let draft_result = draft.result.clone();
@@ -299,201 +276,38 @@ fn DraftMatchItem(
     let draft_result_4 = draft.result.clone();
     let draft_comment = draft.comment.clone();
 
-    let opp_ref = NodeRef::<leptos::html::Div>::new();
-
-    // 自キャラが選択されたら相手キャラ選択にフォーカス
-    Effect::new(move || {
-        if draft_char_id.is_some() && draft_opp_id.is_none() {
-            if let Some(div_elem) = opp_ref.get() {
-                let _ = div_elem.click();
-            }
-        }
-    });
+    let characters_for_char = characters.clone();
+    let characters_for_opp = characters.clone();
 
     view! {
         <div class="match-item draft-match">
             <div class="match-row">
-                <input
-                    type="checkbox"
-                    class="match-checkbox"
-                    checked=false
-                    on:click=move |ev| {
-                        ev.stop_propagation();
+                <button
+                    class="draft-delete-btn"
+                    on:click=move |_| {
                         on_cancel();
                     }
-                />
+                    title="ドラフトを削除"
+                >
+                    "×"
+                </button>
                 <div class="match-number"></div>
                 <div class="match-characters">
-                    <Show when=move || editing_char.get()>
-                        <div class="char-dropdown-overlay" on:click=move |_| set_editing_char.set(false)>
-                            <div
-                                class="char-dropdown"
-                                style=move || {
-                                    let (left, top) = dropdown_pos.get();
-                                    format!("left: {}px; top: {}px;", left, top)
-                                }
-                                on:click=|e| e.stop_propagation()
-                            >
-                                {characters_sorted
-                                    .iter()
-                                    .map(|c| {
-                                        let char_id = c.id;
-                                        let char_name = c.name.clone();
-                                        let fighter_key = c.fighter_key.clone();
-                                        view! {
-                                            <div
-                                                class="char-dropdown-item"
-                                                on:click=move |_| {
-                                                    on_character_select(char_id);
-                                                    set_editing_char.set(false);
-                                                }
-                                            >
-                                                <img
-                                                    src=format!("/public/fighters/{}.png", fighter_key)
-                                                    class="character-icon"
-                                                    alt=char_name.clone()
-                                                />
-                                                <span>{char_name}</span>
-                                            </div>
-                                        }
-                                    })
-                                    .collect_view()}
-                            </div>
-                        </div>
-                    </Show>
-
-                    <div
-                        class="char-display editable"
-                        on:click=move |ev| {
-                            if let Some(element) = ev.current_target() {
-                                if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
-                                    let elem = el.as_ref() as &web_sys::Element;
-                                    let rect = elem.get_bounding_client_rect();
-                                    let window_height = web_sys::window()
-                                        .and_then(|w| w.inner_height().ok())
-                                        .and_then(|h| h.as_f64())
-                                        .unwrap_or(600.0);
-
-                                    let dropdown_height = 400.0;
-                                    let space_below = window_height - rect.bottom();
-
-                                    let top = if space_below < dropdown_height {
-                                        rect.top() - dropdown_height
-                                    } else {
-                                        rect.bottom()
-                                    };
-
-                                    set_dropdown_pos.set((rect.left(), top));
-                                }
-                            }
-                            set_editing_char.set(true);
-                        }
-                    >
-                        {move || {
-                            if let Some((name, key)) = get_char_info(draft_char_id) {
-                                view! {
-                                    <>
-                                        <img
-                                            src=format!("/public/fighters/{}.png", key)
-                                            class="character-icon"
-                                            alt=name.clone()
-                                        />
-                                        <span>{name}</span>
-                                    </>
-                                }
-                                    .into_any()
-                            } else {
-                                view! { <span style="color: #999;">"キャラを選択"</span> }.into_any()
-                            }
-                        }}
-                    </div>
+                    <CharacterAutocomplete
+                        characters=characters_for_char
+                        selected_id=draft_char_id
+                        on_select=on_character_select
+                        placeholder="自キャラ"
+                    />
 
                     <span class="vs-text">" vs "</span>
 
-                    <Show when=move || editing_opp.get()>
-                        <div class="char-dropdown-overlay" on:click=move |_| set_editing_opp.set(false)>
-                            <div
-                                class="char-dropdown"
-                                style=move || {
-                                    let (left, top) = dropdown_pos.get();
-                                    format!("left: {}px; top: {}px;", left, top)
-                                }
-                                on:click=|e| e.stop_propagation()
-                            >
-                                {characters_sorted_2
-                                    .iter()
-                                    .map(|c| {
-                                        let char_id = c.id;
-                                        let char_name = c.name.clone();
-                                        let fighter_key = c.fighter_key.clone();
-                                        view! {
-                                            <div
-                                                class="char-dropdown-item"
-                                                on:click=move |_| {
-                                                    on_opponent_select(char_id);
-                                                    set_editing_opp.set(false);
-                                                }
-                                            >
-                                                <img
-                                                    src=format!("/public/fighters/{}.png", fighter_key)
-                                                    class="character-icon"
-                                                    alt=char_name.clone()
-                                                />
-                                                <span>{char_name}</span>
-                                            </div>
-                                        }
-                                    })
-                                    .collect_view()}
-                            </div>
-                        </div>
-                    </Show>
-
-                    <div
-                        class="char-display editable"
-                        on:click=move |ev| {
-                            if let Some(element) = ev.current_target() {
-                                if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
-                                    let elem = el.as_ref() as &web_sys::Element;
-                                    let rect = elem.get_bounding_client_rect();
-                                    let window_height = web_sys::window()
-                                        .and_then(|w| w.inner_height().ok())
-                                        .and_then(|h| h.as_f64())
-                                        .unwrap_or(600.0);
-
-                                    let dropdown_height = 400.0;
-                                    let space_below = window_height - rect.bottom();
-
-                                    let top = if space_below < dropdown_height {
-                                        rect.top() - dropdown_height
-                                    } else {
-                                        rect.bottom()
-                                    };
-
-                                    set_dropdown_pos.set((rect.left(), top));
-                                }
-                            }
-                            set_editing_opp.set(true);
-                        }
-                        node_ref=opp_ref
-                    >
-                        {move || {
-                            if let Some((name, key)) = get_opp_info(draft_opp_id) {
-                                view! {
-                                    <>
-                                        <img
-                                            src=format!("/public/fighters/{}.png", key)
-                                            class="character-icon"
-                                            alt=name.clone()
-                                        />
-                                        <span>{name}</span>
-                                    </>
-                                }
-                                    .into_any()
-                            } else {
-                                view! { <span style="color: #999;">"相手を選択"</span> }.into_any()
-                            }
-                        }}
-                    </div>
+                    <CharacterAutocomplete
+                        characters=characters_for_opp
+                        selected_id=draft_opp_id
+                        on_select=on_opponent_select
+                        placeholder="相手"
+                    />
                 </div>
 
                 <input
@@ -505,19 +319,16 @@ fn DraftMatchItem(
                     }
                 />
 
-                <div class="result-buttons">
+                <div class="result-buttons" on:click=move |_| on_result_change()>
                     <button
                         class=move || {
-                            if draft_result.clone() == "win" {
+                            let result = draft_result.clone();
+                            if result == "win" {
                                 "result-btn result-btn-win active"
+                            } else if result.is_empty() {
+                                "result-btn result-btn-win unselected"
                             } else {
-                                "result-btn result-btn-win"
-                            }
-                        }
-
-                        on:click=move |_| {
-                            if draft_result_3.clone() != "win" {
-                                on_result_change("win".to_string());
+                                "result-btn result-btn-win inactive"
                             }
                         }
                     >
@@ -525,16 +336,13 @@ fn DraftMatchItem(
                     </button>
                     <button
                         class=move || {
-                            if draft_result_2.clone() == "loss" {
+                            let result = draft_result_2.clone();
+                            if result == "loss" {
                                 "result-btn result-btn-loss active"
+                            } else if result.is_empty() {
+                                "result-btn result-btn-loss unselected"
                             } else {
-                                "result-btn result-btn-loss"
-                            }
-                        }
-
-                        on:click=move |_| {
-                            if draft_result_4.clone() != "loss" {
-                                on_result_change("loss".to_string());
+                                "result-btn result-btn-loss inactive"
                             }
                         }
                     >
