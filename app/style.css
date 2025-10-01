@@ -254,6 +254,41 @@ body {
     background: var(--bg-hover);
 }
 
+.session-gsp-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.gsp-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gsp-input-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.gsp-input {
+    width: 120px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.gsp-input:focus {
+    outline: none;
+    border-color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
 .session-notes-input {
     width: 100%;
     padding: 4px 8px;

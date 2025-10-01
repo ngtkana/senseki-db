@@ -43,6 +43,8 @@ pub async fn list(State(state): State<AppState>) -> impl IntoResponse {
                     match_count,
                     wins,
                     losses,
+                    start_gsp: session.start_gsp,
+                    end_gsp: session.end_gsp,
                 });
             }
 
@@ -86,6 +88,8 @@ pub async fn get(State(state): State<AppState>, Path(id): Path<i32>) -> impl Int
                 match_count,
                 wins,
                 losses,
+                start_gsp: session.start_gsp,
+                end_gsp: session.end_gsp,
             };
 
             (StatusCode::OK, Json(response)).into_response()
@@ -119,6 +123,8 @@ pub async fn create(
         session_date: Set(req.session_date),
         title: Set(req.title),
         notes: Set(req.notes),
+        start_gsp: Set(req.start_gsp),
+        end_gsp: Set(req.end_gsp),
         ..Default::default()
     };
 
@@ -132,6 +138,8 @@ pub async fn create(
                 match_count: 0,
                 wins: 0,
                 losses: 0,
+                start_gsp: session.start_gsp,
+                end_gsp: session.end_gsp,
             };
             (StatusCode::CREATED, Json(response)).into_response()
         }
@@ -171,6 +179,12 @@ pub async fn update(
             if let Some(notes) = req.notes {
                 active_session.notes = Set(notes);
             }
+            if let Some(start_gsp) = req.start_gsp {
+                active_session.start_gsp = Set(start_gsp);
+            }
+            if let Some(end_gsp) = req.end_gsp {
+                active_session.end_gsp = Set(end_gsp);
+            }
 
             match active_session.update(&state.db).await {
                 Ok(updated_session) => {
@@ -193,6 +207,8 @@ pub async fn update(
                         match_count,
                         wins,
                         losses,
+                        start_gsp: updated_session.start_gsp,
+                        end_gsp: updated_session.end_gsp,
                     };
                     (StatusCode::OK, Json(response)).into_response()
                 }

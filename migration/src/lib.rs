@@ -4,6 +4,7 @@ mod m20220101_000001_create_table;
 mod m20220101_000002_seed_characters;
 mod m20250102_000001_schema_update;
 mod m20250102_000002_update_character_names;
+mod m20250102_000003_add_gsp_to_sessions;
 
 pub struct Migrator;
 
@@ -15,6 +16,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20220101_000002_seed_characters::Migration),
             Box::new(m20250102_000001_schema_update::Migration),
             Box::new(m20250102_000002_update_character_names::Migration),
+            Box::new(m20250102_000003_add_gsp_to_sessions::Migration),
         ]
     }
 }

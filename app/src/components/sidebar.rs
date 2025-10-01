@@ -20,6 +20,8 @@ pub fn Sidebar(
                 session_date: chrono::Local::now().format("%Y-%m-%d").to_string(),
                 title: None,
                 notes: None,
+                start_gsp: None,
+                end_gsp: None,
             };
             match api::create_session(req).await {
                 Ok(new_session) => {

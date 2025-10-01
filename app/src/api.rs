@@ -22,6 +22,8 @@ pub struct Session {
     pub match_count: i64,
     pub wins: i64,
     pub losses: i64,
+    pub start_gsp: Option<i32>,
+    pub end_gsp: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]
@@ -29,6 +31,8 @@ pub struct CreateSessionRequest {
     pub session_date: String,
     pub title: Option<String>,
     pub notes: Option<String>,
+    pub start_gsp: Option<i32>,
+    pub end_gsp: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]
@@ -36,6 +40,8 @@ pub struct UpdateSessionRequest {
     pub session_date: Option<String>,
     pub title: Option<Option<String>>,
     pub notes: Option<Option<String>>,
+    pub start_gsp: Option<Option<i32>>,
+    pub end_gsp: Option<Option<i32>>,
 }
 
 // マッチ

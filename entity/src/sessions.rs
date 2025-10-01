@@ -13,6 +13,8 @@ pub struct Model {
     pub created_at: DateTime,
     pub updated_at: DateTime,
     pub title: Option<String>,
+    pub start_gsp: Option<i32>,
+    pub end_gsp: Option<i32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
