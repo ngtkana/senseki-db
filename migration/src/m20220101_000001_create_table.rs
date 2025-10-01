@@ -28,7 +28,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(pk_auto(Session::Id))
                     .col(date(Session::SessionDate).not_null())
-                    .col(text(Session::Notes))
+                    .col(text_null(Session::Notes))
                     .col(timestamp(Session::CreatedAt).default(Expr::current_timestamp()))
                     .col(timestamp(Session::UpdatedAt).default(Expr::current_timestamp()))
                     .to_owned(),
@@ -47,9 +47,9 @@ impl MigrationTrait for Migration {
                     .col(integer(Match::OpponentCharacterId).not_null())
                     .col(string_len(Match::Result, 10).not_null())
                     .col(integer(Match::MatchOrder).not_null())
-                    .col(integer(Match::GspBefore))
-                    .col(integer(Match::GspAfter))
-                    .col(text(Match::Comment))
+                    .col(integer_null(Match::GspBefore))
+                    .col(integer_null(Match::GspAfter))
+                    .col(text_null(Match::Comment))
                     .col(timestamp(Match::CreatedAt).default(Expr::current_timestamp()))
                     .col(timestamp(Match::UpdatedAt).default(Expr::current_timestamp()))
                     .foreign_key(
@@ -253,13 +253,17 @@ enum Character {
 
 impl Iden for Character {
     fn unquoted(&self, s: &mut dyn std::fmt::Write) {
-        write!(s, "{}", match self {
-            Self::Table => "characters",
-            Self::Id => "id",
-            Self::Name => "name",
-            Self::CreatedAt => "created_at",
-            Self::UpdatedAt => "updated_at",
-        })
+        write!(
+            s,
+            "{}",
+            match self {
+                Self::Table => "characters",
+                Self::Id => "id",
+                Self::Name => "name",
+                Self::CreatedAt => "created_at",
+                Self::UpdatedAt => "updated_at",
+            }
+        )
         .unwrap();
     }
 }
@@ -275,14 +279,18 @@ enum Session {
 
 impl Iden for Session {
     fn unquoted(&self, s: &mut dyn std::fmt::Write) {
-        write!(s, "{}", match self {
-            Self::Table => "sessions",
-            Self::Id => "id",
-            Self::SessionDate => "session_date",
-            Self::Notes => "notes",
-            Self::CreatedAt => "created_at",
-            Self::UpdatedAt => "updated_at",
-        })
+        write!(
+            s,
+            "{}",
+            match self {
+                Self::Table => "sessions",
+                Self::Id => "id",
+                Self::SessionDate => "session_date",
+                Self::Notes => "notes",
+                Self::CreatedAt => "created_at",
+                Self::UpdatedAt => "updated_at",
+            }
+        )
         .unwrap();
     }
 }
@@ -304,20 +312,24 @@ enum Match {
 
 impl Iden for Match {
     fn unquoted(&self, s: &mut dyn std::fmt::Write) {
-        write!(s, "{}", match self {
-            Self::Table => "matches",
-            Self::Id => "id",
-            Self::SessionId => "session_id",
-            Self::CharacterId => "character_id",
-            Self::OpponentCharacterId => "opponent_character_id",
-            Self::Result => "result",
-            Self::MatchOrder => "match_order",
-            Self::GspBefore => "gsp_before",
-            Self::GspAfter => "gsp_after",
-            Self::Comment => "comment",
-            Self::CreatedAt => "created_at",
-            Self::UpdatedAt => "updated_at",
-        })
+        write!(
+            s,
+            "{}",
+            match self {
+                Self::Table => "matches",
+                Self::Id => "id",
+                Self::SessionId => "session_id",
+                Self::CharacterId => "character_id",
+                Self::OpponentCharacterId => "opponent_character_id",
+                Self::Result => "result",
+                Self::MatchOrder => "match_order",
+                Self::GspBefore => "gsp_before",
+                Self::GspAfter => "gsp_after",
+                Self::Comment => "comment",
+                Self::CreatedAt => "created_at",
+                Self::UpdatedAt => "updated_at",
+            }
+        )
         .unwrap();
     }
 }

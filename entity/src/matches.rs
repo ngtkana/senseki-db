@@ -13,10 +13,10 @@ pub struct Model {
     pub opponent_character_id: i32,
     pub result: String,
     pub match_order: i32,
-    pub gsp_before: i32,
-    pub gsp_after: i32,
-    #[sea_orm(column_type = "Text")]
-    pub comment: String,
+    pub gsp_before: Option<i32>,
+    pub gsp_after: Option<i32>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub comment: Option<String>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }

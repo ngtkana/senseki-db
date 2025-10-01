@@ -9,8 +9,8 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub session_date: Date,
-    #[sea_orm(column_type = "Text")]
-    pub notes: String,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub notes: Option<String>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
