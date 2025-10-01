@@ -204,7 +204,23 @@ pub fn MatchItem(
                                 if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
                                     let elem = el.as_ref() as &web_sys::Element;
                                     let rect = elem.get_bounding_client_rect();
-                                    set_dropdown_pos.set((rect.left(), rect.bottom()));
+                                    let window_height = web_sys::window()
+                                        .and_then(|w| w.inner_height().ok())
+                                        .and_then(|h| h.as_f64())
+                                        .unwrap_or(600.0);
+
+                                    // ドロップダウンの高さ（最大400px）
+                                    let dropdown_height = 400.0;
+                                    let space_below = window_height - rect.bottom();
+
+                                    // 下に十分なスペースがない場合は上に表示
+                                    let top = if space_below < dropdown_height {
+                                        rect.top() - dropdown_height
+                                    } else {
+                                        rect.bottom()
+                                    };
+
+                                    set_dropdown_pos.set((rect.left(), top));
                                 }
                             }
                             set_editing_char.set(true);
@@ -272,7 +288,23 @@ pub fn MatchItem(
                                 if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
                                     let elem = el.as_ref() as &web_sys::Element;
                                     let rect = elem.get_bounding_client_rect();
-                                    set_dropdown_pos.set((rect.left(), rect.bottom()));
+                                    let window_height = web_sys::window()
+                                        .and_then(|w| w.inner_height().ok())
+                                        .and_then(|h| h.as_f64())
+                                        .unwrap_or(600.0);
+
+                                    // ドロップダウンの高さ（最大400px）
+                                    let dropdown_height = 400.0;
+                                    let space_below = window_height - rect.bottom();
+
+                                    // 下に十分なスペースがない場合は上に表示
+                                    let top = if space_below < dropdown_height {
+                                        rect.top() - dropdown_height
+                                    } else {
+                                        rect.bottom()
+                                    };
+
+                                    set_dropdown_pos.set((rect.left(), top));
                                 }
                             }
                             set_editing_opp.set(true);
