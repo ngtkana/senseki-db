@@ -3,17 +3,34 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 use leptos::web_sys;
 
-use crate::api::{self, Session};
+use crate::api::{self, CreateSessionRequest, Session};
 
 #[component]
 pub fn Sidebar(
     sessions: ReadSignal<Vec<Session>>,
     selected_session_id: ReadSignal<Option<i32>>,
     on_select: impl Fn(i32) + 'static + Copy + Send,
-    on_new_session: impl Fn() + 'static + Copy + Send,
     on_session_deleted: impl Fn() + 'static + Copy + Send + Sync,
     loading: ReadSignal<bool>,
 ) -> impl IntoView {
+    let add_session = move || {
+        spawn_local(async move {
+            let req = CreateSessionRequest {
+                session_date: chrono::Local::now().format("%Y-%m-%d").to_string(),
+                title: None,
+                notes: None,
+            };
+            match api::create_session(req).await {
+                Ok(_) => {
+                    logging::log!("セッション追加成功");
+                    on_session_deleted();
+                }
+                Err(e) => {
+                    logging::error!("セッション追加失敗: {}", e);
+                }
+            }
+        });
+    };
     view! {
         <div class="sidebar">
             {move || {
@@ -41,7 +58,7 @@ pub fn Sidebar(
                                 })
                                 .collect_view()}
 
-                            <button class="add-session-button" on:click=move |_| on_new_session()>
+                            <button class="add-session-button" on:click=move |_| add_session()>
                                 "+ セッション"
                             </button>
                         </div>

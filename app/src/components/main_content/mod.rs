@@ -1,4 +1,3 @@
-mod match_form;
 mod match_item;
 mod match_list;
 mod session_header;

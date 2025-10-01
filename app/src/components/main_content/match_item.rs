@@ -20,7 +20,6 @@ pub fn MatchItem(
     let (editing_result, set_editing_result) = signal(false);
     let (comment_value, set_comment_value) = signal(initial_comment.clone());
     let (show_menu, set_show_menu) = signal(false);
-    let (show_delete_confirm, set_show_delete_confirm) = signal(false);
     let (dropdown_pos, set_dropdown_pos) = signal((0.0, 0.0));
 
     let char_id = characters
@@ -160,11 +159,7 @@ pub fn MatchItem(
     characters_for_opp_select.sort_by_key(|c| c.id);
 
     let handle_delete = move || {
-        set_show_delete_confirm.set(true);
         set_show_menu.set(false);
-    };
-
-    let confirm_delete = move || {
         spawn_local(async move {
             match api::delete_match(match_id).await {
                 Ok(_) => {
@@ -374,26 +369,6 @@ pub fn MatchItem(
                     </Show>
                 </div>
             </div>
-
-            <Show when=move || show_delete_confirm.get()>
-                <div class="confirm-overlay" on:click=move |_| set_show_delete_confirm.set(false)>
-                    <div class="confirm-dialog" on:click=|e| e.stop_propagation()>
-                        <h3>"マッチを削除しますか？"</h3>
-                        <p>"この操作は取り消せません。"</p>
-                        <div class="confirm-actions">
-                            <button
-                                class="btn"
-                                on:click=move |_| set_show_delete_confirm.set(false)
-                            >
-                                "キャンセル"
-                            </button>
-                            <button class="btn btn-danger" on:click=move |_| confirm_delete()>
-                                "削除"
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </Show>
         </div>
     }
 }

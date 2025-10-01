@@ -5,7 +5,7 @@ mod api;
 mod components;
 
 use api::{Character, Session};
-use components::{Header, MainContent, Modal, SessionForm, Sidebar};
+use components::{Header, MainContent, Sidebar};
 
 fn main() {
     console_error_panic_hook::set_once();
@@ -14,7 +14,6 @@ fn main() {
 
 #[component]
 fn App() -> impl IntoView {
-    let (show_session_modal, set_show_session_modal) = signal(false);
     let (sessions, set_sessions) = signal(Vec::<Session>::new());
     let (characters, set_characters) = signal(Vec::<Character>::new());
     let (selected_session_id, set_selected_session_id) = signal(Option::<i32>::None);
@@ -65,7 +64,6 @@ fn App() -> impl IntoView {
                     sessions=sessions
                     selected_session_id=selected_session_id
                     on_select=move |id| set_selected_session_id.set(Some(id))
-                    on_new_session=move || set_show_session_modal.set(true)
                     on_session_deleted=reload_sessions
                     loading=loading
                 />
@@ -79,16 +77,6 @@ fn App() -> impl IntoView {
                 />
             </div>
 
-            <Show when=move || show_session_modal.get()>
-                <Modal on_close=move || set_show_session_modal.set(false)>
-                    <SessionForm
-                        on_submit=move || {
-                            set_show_session_modal.set(false);
-                            reload_sessions();
-                        }
-                    />
-                </Modal>
-            </Show>
         </div>
     }
 }

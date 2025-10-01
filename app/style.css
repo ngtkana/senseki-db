@@ -294,6 +294,15 @@ body {
     background: var(--bg-secondary);
 }
 
+.match-item.draft-match {
+    border: 2px dashed var(--border-dark);
+    background: #fffef0;
+}
+
+.match-item.draft-match:hover {
+    background: #fffce0;
+}
+
 .match-row {
     display: flex;
     align-items: center;
