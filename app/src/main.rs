@@ -40,7 +40,9 @@ fn App() -> impl IntoView {
 
     let reload_sessions = move || {
         spawn_local(async move {
-            if let Ok(data) = api::fetch_sessions().await {
+            if let Ok(mut data) = api::fetch_sessions().await {
+                // 新しい順にソート
+                data.sort_by(|a, b| b.id.cmp(&a.id));
                 set_sessions.set(data);
             }
         });
