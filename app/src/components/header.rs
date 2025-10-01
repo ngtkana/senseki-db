@@ -42,12 +42,13 @@ pub fn Header(
                 </div>
 
                 <Show when=move || show_dropdown.get()>
-                    <div
-                        class="character-dropdown"
-                        on:click=move |e| e.stop_propagation()
-                    >
-                        <div class="dropdown-header">"使用キャラを選択"</div>
-                        <div class="character-grid">
+                    <div class="char-dropdown-overlay" on:click=move |_| set_show_dropdown.set(false)>
+                        <div
+                            class="character-dropdown"
+                            on:click=move |e| e.stop_propagation()
+                        >
+                            <div class="dropdown-header">"使用キャラを選択"</div>
+                            <div class="character-grid">
                             {move || {
                                 let mut chars = characters.get();
                                 chars.sort_by_key(|c| c.id);
@@ -81,6 +82,7 @@ pub fn Header(
                                     .collect_view()
                             }}
 
+                            </div>
                         </div>
                     </div>
                 </Show>

@@ -11,6 +11,7 @@ pub fn Sidebar(
     selected_session_id: ReadSignal<Option<i32>>,
     on_select: impl Fn(i32) + 'static + Copy + Send,
     on_session_deleted: impl Fn() + 'static + Copy + Send + Sync,
+    on_session_added: impl Fn(i32) + 'static + Copy + Send + Sync,
     loading: ReadSignal<bool>,
 ) -> impl IntoView {
     let add_session = move || {
@@ -21,9 +22,9 @@ pub fn Sidebar(
                 notes: None,
             };
             match api::create_session(req).await {
-                Ok(_) => {
+                Ok(new_session) => {
                     logging::log!("セッション追加成功");
-                    on_session_deleted();
+                    on_session_added(new_session.id);
                 }
                 Err(e) => {
                     logging::error!("セッション追加失敗: {}", e);
@@ -39,6 +40,10 @@ pub fn Sidebar(
                 } else {
                     view! {
                         <div>
+                            <button class="add-session-button" on:click=move |_| add_session()>
+                                "+ セッション"
+                            </button>
+
                             {sessions
                                 .get()
                                 .iter()
@@ -57,10 +62,6 @@ pub fn Sidebar(
                                     }
                                 })
                                 .collect_view()}
-
-                            <button class="add-session-button" on:click=move |_| add_session()>
-                                "+ セッション"
-                            </button>
                         </div>
                     }
                         .into_any()

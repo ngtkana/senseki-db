@@ -3,6 +3,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 use leptos::wasm_bindgen::JsCast;
 use leptos::web_sys;
+use std::collections::HashSet;
 
 use crate::api::{self, Character, CreateMatchRequest, Match};
 
@@ -13,6 +14,7 @@ struct DraftMatch {
     character_id: Option<i32>,
     opponent_character_id: Option<i32>,
     result: String,
+    comment: String,
 }
 
 #[component]
@@ -23,11 +25,9 @@ pub fn MatchList(
     selected_character_id: ReadSignal<Option<i32>>,
     on_match_added: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
-    let (draft_match, set_draft_match) = signal(Some(DraftMatch {
-        character_id: selected_character_id.get(),
-        opponent_character_id: None,
-        result: "win".to_string(),
-    }));
+    let (draft_match, set_draft_match) = signal(Option::<DraftMatch>::None);
+    let (selected_matches, set_selected_matches) = signal(HashSet::<i32>::new());
+    let (last_selected_index, set_last_selected_index) = signal(Option::<usize>::None);
 
     // グローバルな自キャラが変更されたら、ドラフトの自キャラも更新
     Effect::new(move || {
@@ -40,25 +40,39 @@ pub fn MatchList(
         }
     });
 
-    let save_draft_match = move |char_id: i32, opp_id: i32, result: String| {
+    let add_draft_match = move || {
+        set_draft_match.set(Some(DraftMatch {
+            character_id: selected_character_id.get(),
+            opponent_character_id: None,
+            result: "win".to_string(),
+            comment: String::new(),
+        }));
+    };
+
+    let save_draft_match = move |char_id: i32, opp_id: i32, result: String, comment: String| {
         spawn_local(async move {
             let req = CreateMatchRequest {
                 session_id,
                 character_id: char_id,
                 opponent_character_id: opp_id,
                 result,
-                comment: None,
+                comment: if comment.is_empty() {
+                    None
+                } else {
+                    Some(comment)
+                },
             };
             match api::create_match(req).await {
                 Ok(_) => {
                     logging::log!("マッチ追加成功");
-                    // 新しいドラフトを作成
+                    on_match_added();
+                    // 次のドラフトを自動作成
                     set_draft_match.set(Some(DraftMatch {
                         character_id: selected_character_id.get(),
                         opponent_character_id: None,
                         result: "win".to_string(),
+                        comment: String::new(),
                     }));
-                    on_match_added();
                 }
                 Err(e) => {
                     logging::error!("マッチ追加失敗: {}", e);
@@ -70,53 +84,130 @@ pub fn MatchList(
     let update_draft_character = move |char_id: i32| {
         if let Some(mut draft) = draft_match.get() {
             draft.character_id = Some(char_id);
-            // 両方選択されたら保存
-            if let (Some(c), Some(o)) = (draft.character_id, draft.opponent_character_id) {
-                save_draft_match(c, o, draft.result.clone());
-            } else {
-                set_draft_match.set(Some(draft));
-            }
+            set_draft_match.set(Some(draft));
         }
     };
 
     let update_draft_opponent = move |opp_id: i32| {
         if let Some(mut draft) = draft_match.get() {
             draft.opponent_character_id = Some(opp_id);
-            // 両方選択されたら保存
-            if let (Some(c), Some(o)) = (draft.character_id, draft.opponent_character_id) {
-                save_draft_match(c, o, draft.result.clone());
-            } else {
-                set_draft_match.set(Some(draft));
-            }
+            set_draft_match.set(Some(draft));
         }
     };
 
     let update_draft_result = move |result: String| {
         if let Some(mut draft) = draft_match.get() {
-            draft.result = result.clone();
-            // 両方選択されたら保存
+            draft.result = result;
+            set_draft_match.set(Some(draft));
+        }
+    };
+
+    let update_draft_comment = move |comment: String| {
+        if let Some(mut draft) = draft_match.get() {
+            draft.comment = comment;
+            set_draft_match.set(Some(draft));
+        }
+    };
+
+    let confirm_draft = move || {
+        if let Some(draft) = draft_match.get() {
             if let (Some(c), Some(o)) = (draft.character_id, draft.opponent_character_id) {
-                save_draft_match(c, o, result);
-            } else {
-                set_draft_match.set(Some(draft));
+                save_draft_match(c, o, draft.result.clone(), draft.comment.clone());
             }
         }
     };
 
+    let handle_match_click = move |match_id: i32, index: usize, shift_key: bool, ctrl_key: bool| {
+        let mut selected = selected_matches.get();
+
+        if shift_key {
+            // Shift選択: 範囲選択
+            if let Some(last_idx) = last_selected_index.get() {
+                let start = last_idx.min(index);
+                let end = last_idx.max(index);
+                let all_matches = matches.get();
+                for i in start..=end {
+                    if i < all_matches.len() {
+                        selected.insert(all_matches[i].id);
+                    }
+                }
+            } else {
+                selected.insert(match_id);
+            }
+            set_last_selected_index.set(Some(index));
+        } else if ctrl_key {
+            // Ctrl選択: 複数選択
+            if selected.contains(&match_id) {
+                selected.remove(&match_id);
+            } else {
+                selected.insert(match_id);
+            }
+            set_last_selected_index.set(Some(index));
+        } else {
+            // 通常クリック: 選択解除
+            selected.clear();
+            set_last_selected_index.set(None);
+        }
+
+        set_selected_matches.set(selected);
+    };
+
+    let delete_selected = move || {
+        let selected = selected_matches.get();
+        if selected.is_empty() {
+            return;
+        }
+
+        for match_id in selected.iter() {
+            let id = *match_id;
+            spawn_local(async move {
+                match api::delete_match(id).await {
+                    Ok(_) => {
+                        logging::log!("マッチ削除成功: {}", id);
+                    }
+                    Err(e) => {
+                        logging::error!("マッチ削除失敗: {}", e);
+                    }
+                }
+            });
+        }
+
+        set_selected_matches.set(HashSet::new());
+        set_last_selected_index.set(None);
+        on_match_added();
+    };
+
     view! {
         <div class="match-list">
+            <Show when=move || !selected_matches.get().is_empty()>
+                <div class="match-list-header">
+                    <span class="selected-count">
+                        {move || format!("{}件選択中", selected_matches.get().len())}
+                    </span>
+                    <button class="btn btn-danger" on:click=move |_| delete_selected()>
+                        "選択を削除"
+                    </button>
+                </div>
+            </Show>
             {move || {
                 let chars = characters.get();
+                let selected = selected_matches.get();
                 matches
                     .get()
                     .iter()
-                    .map(|m| {
+                    .enumerate()
+                    .map(|(index, m)| {
+                        let match_id = m.id;
+                        let is_selected = selected.contains(&match_id);
                         view! {
                             <MatchItem
+                                match_number=index + 1
                                 match_data=m.clone()
                                 char_name=m.character_name.clone()
                                 opp_name=m.opponent_character_name.clone()
                                 characters=chars.clone()
+                                is_selected=is_selected
+                                on_match_clicked=move |shift, ctrl| handle_match_click(match_id, index, shift, ctrl)
                                 on_match_deleted=on_match_added
                             />
                         }
@@ -124,19 +215,31 @@ pub fn MatchList(
                     .collect_view()
             }}
 
-            {move || {
-                let draft = draft_match.get().unwrap();
-                let chars = characters.get();
-                view! {
-                    <DraftMatchItem
-                        draft=draft
-                        characters=chars
-                        on_character_select=update_draft_character
-                        on_opponent_select=update_draft_opponent
-                        on_result_change=update_draft_result
-                    />
-                }
-            }}
+            <Show when=move || draft_match.get().is_some()>
+                {move || {
+                    let draft = draft_match.get().unwrap();
+                    let chars = characters.get();
+                    let cancel_draft = move || set_draft_match.set(None);
+                    view! {
+                        <DraftMatchItem
+                            draft=draft
+                            characters=chars
+                            on_character_select=update_draft_character
+                            on_opponent_select=update_draft_opponent
+                            on_result_change=update_draft_result
+                            on_comment_change=update_draft_comment
+                            on_confirm=confirm_draft
+                            on_cancel=cancel_draft
+                        />
+                    }
+                }}
+            </Show>
+
+            <Show when=move || draft_match.get().is_none()>
+                <button class="add-match-button" on:click=move |_| add_draft_match()>
+                    "+ マッチを追加"
+                </button>
+            </Show>
         </div>
     }
 }
@@ -148,10 +251,14 @@ fn DraftMatchItem(
     on_character_select: impl Fn(i32) + 'static + Copy + Send + Sync,
     on_opponent_select: impl Fn(i32) + 'static + Copy + Send + Sync,
     on_result_change: impl Fn(String) + 'static + Copy + Send + Sync,
+    on_comment_change: impl Fn(String) + 'static + Copy + Send + Sync,
+    on_confirm: impl Fn() + 'static + Copy + Send + Sync,
+    on_cancel: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
     let (editing_char, set_editing_char) = signal(draft.character_id.is_none());
     let (editing_opp, set_editing_opp) = signal(false);
     let (dropdown_pos, set_dropdown_pos) = signal((0.0, 0.0));
+    let (show_menu, set_show_menu) = signal(false);
 
     let characters_for_dropdown = characters.clone();
     let mut characters_sorted = characters_for_dropdown.clone();
@@ -182,10 +289,25 @@ fn DraftMatchItem(
     let draft_opp_id = draft.opponent_character_id;
     let draft_result = draft.result.clone();
     let draft_result_2 = draft.result.clone();
+    let draft_result_3 = draft.result.clone();
+    let draft_result_4 = draft.result.clone();
+    let draft_comment = draft.comment.clone();
+
+    let comment_ref = NodeRef::<leptos::html::Input>::new();
+
+    // 両方のキャラが選択されたらコメント欄にフォーカス
+    Effect::new(move || {
+        if draft_char_id.is_some() && draft_opp_id.is_some() {
+            if let Some(input) = comment_ref.get() {
+                let _ = input.focus();
+            }
+        }
+    });
 
     view! {
         <div class="match-item draft-match">
             <div class="match-row">
+                <div class="match-number"></div>
                 <div class="match-characters">
                     <Show when=move || editing_char.get()>
                         <div class="char-dropdown-overlay" on:click=move |_| set_editing_char.set(false)>
@@ -333,24 +455,74 @@ fn DraftMatchItem(
                 <input
                     type="text"
                     class="match-comment-input"
-                    placeholder="コメント（任意）"
-                    disabled
+                    placeholder="コメント（任意）またはEnterで確定"
+                    value=draft_comment
+                    on:input=move |ev| {
+                        on_comment_change(event_target_value(&ev));
+                    }
+                    on:keydown=move |ev| {
+                        if ev.key() == "Enter" {
+                            on_confirm();
+                        }
+                    }
+                    node_ref=comment_ref
                 />
 
-                <select
-                    class="result-select"
-                    on:change=move |ev| {
-                        let new_result = event_target_value(&ev);
-                        on_result_change(new_result);
-                    }
-                >
-                    <option value="win" selected=move || draft_result.clone() == "win">
-                        "勝ち"
-                    </option>
-                    <option value="loss" selected=move || draft_result_2.clone() == "loss">
-                        "負け"
-                    </option>
-                </select>
+                <div class="result-buttons">
+                    <button
+                        class=move || {
+                            if draft_result.clone() == "win" {
+                                "result-btn result-btn-win active"
+                            } else {
+                                "result-btn result-btn-win"
+                            }
+                        }
+
+                        on:click=move |_| {
+                            if draft_result_3.clone() != "win" {
+                                on_result_change("win".to_string());
+                            }
+                        }
+                    >
+                        "○"
+                    </button>
+                    <button
+                        class=move || {
+                            if draft_result_2.clone() == "loss" {
+                                "result-btn result-btn-loss active"
+                            } else {
+                                "result-btn result-btn-loss"
+                            }
+                        }
+
+                        on:click=move |_| {
+                            if draft_result_4.clone() != "loss" {
+                                on_result_change("loss".to_string());
+                            }
+                        }
+                    >
+                        "×"
+                    </button>
+                </div>
+
+                <div class="match-menu">
+                    <button
+                        class="menu-button"
+                        on:click=move |_| set_show_menu.set(!show_menu.get())
+                    >
+                        "⋮"
+                    </button>
+                    <Show when=move || show_menu.get()>
+                        <div class="menu-dropdown">
+                            <button class="menu-item delete" on:click=move |_| {
+                                set_show_menu.set(false);
+                                on_cancel();
+                            }>
+                                "削除"
+                            </button>
+                        </div>
+                    </Show>
+                </div>
             </div>
         </div>
     }

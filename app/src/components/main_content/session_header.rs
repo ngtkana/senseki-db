@@ -1,6 +1,7 @@
 use leptos::logging;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
+use leptos::wasm_bindgen::JsCast;
 
 use crate::api::{self, Session};
 
@@ -18,6 +19,22 @@ pub fn SessionHeader(
     let (date_value, set_date_value) = signal(initial_date.clone());
     let (title_value, set_title_value) = signal(initial_title.clone());
     let (notes_value, set_notes_value) = signal(initial_notes.clone());
+    let textarea_ref = NodeRef::<leptos::html::Textarea>::new();
+
+    // 初期表示時とnotes_valueが変更されたときに高さを調整
+    Effect::new(move || {
+        notes_value.track();
+        if let Some(textarea) = textarea_ref.get() {
+            let html_element: &web_sys::HtmlElement = textarea.unchecked_ref();
+            let _ = html_element.style().set_property("height", "auto");
+            if let Some(textarea_el) = textarea.dyn_ref::<web_sys::HtmlTextAreaElement>() {
+                let scroll_height = textarea_el.scroll_height();
+                let _ = html_element
+                    .style()
+                    .set_property("height", &format!("{}px", scroll_height));
+            }
+        }
+    });
 
     let save_date = move |_should_close: bool| {
         let new_date = date_value.get();
@@ -113,8 +130,11 @@ pub fn SessionHeader(
             <textarea
                 class="session-notes-input"
                 prop:value=notes_value
-                on:input=move |ev| set_notes_value.set(event_target_value(&ev))
+                on:input=move |ev| {
+                    set_notes_value.set(event_target_value(&ev));
+                }
                 on:blur=move |_| save_notes(false)
+                node_ref=textarea_ref
             />
         </div>
     }

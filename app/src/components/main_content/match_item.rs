@@ -8,16 +8,18 @@ use crate::api::{self, Character, Match, UpdateMatchRequest};
 
 #[component]
 pub fn MatchItem(
+    match_number: usize,
     match_data: Match,
     char_name: String,
     opp_name: String,
     characters: Vec<Character>,
+    is_selected: bool,
+    on_match_clicked: impl Fn(bool, bool) + 'static + Copy + Send + Sync,
     on_match_deleted: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
     let initial_comment = match_data.comment.clone().unwrap_or_default();
     let (editing_char, set_editing_char) = signal(false);
     let (editing_opp, set_editing_opp) = signal(false);
-    let (editing_result, set_editing_result) = signal(false);
     let (comment_value, set_comment_value) = signal(initial_comment.clone());
     let (show_menu, set_show_menu) = signal(false);
     let (dropdown_pos, set_dropdown_pos) = signal((0.0, 0.0));
@@ -36,21 +38,6 @@ pub fn MatchItem(
     let (selected_char_id, set_selected_char_id) = signal(char_id);
     let (selected_opp_id, set_selected_opp_id) = signal(opp_id);
     let (result_value, set_result_value) = signal(match_data.result.clone());
-
-    let result_class = move || {
-        if result_value.get() == "win" {
-            "win"
-        } else {
-            "loss"
-        }
-    };
-    let result_symbol = move || {
-        if result_value.get() == "win" {
-            "○"
-        } else {
-            "×"
-        }
-    };
 
     let match_id = match_data.id;
 
@@ -126,7 +113,6 @@ pub fn MatchItem(
                 Ok(_) => {
                     logging::log!("勝敗更新成功");
                     set_result_value.set(new_result);
-                    set_editing_result.set(false);
                 }
                 Err(e) => {
                     logging::error!("勝敗更新失敗: {}", e);
@@ -174,8 +160,16 @@ pub fn MatchItem(
     };
 
     view! {
-        <div class="match-item">
+        <div
+            class=move || if is_selected { "match-item selected" } else { "match-item" }
+            on:click=move |ev| {
+                let shift_key = ev.shift_key();
+                let ctrl_key = ev.ctrl_key() || ev.meta_key();
+                on_match_clicked(shift_key, ctrl_key);
+            }
+        >
             <div class="match-row">
+                <div class="match-number">{match_number}</div>
                 <div class="match-characters">
                     <Show when=move || editing_char.get()>
                         <div class="char-dropdown-overlay" on:click=move |_| set_editing_char.set(false)>
@@ -320,38 +314,42 @@ pub fn MatchItem(
                     on:blur=move |_| save_comment(false)
                 />
 
-                <Show
-                    when=move || editing_result.get()
-                    fallback=move || {
-                        view! {
-                            <div
-                                class=move || format!("match-result {} editable", result_class())
-                                on:click=move |_| set_editing_result.set(true)
-                            >
-                                {result_symbol}
-                            </div>
-                        }
-                    }
-                >
-
-                    <select
-                        class="result-select"
-                        on:change=move |ev| {
-                            let new_result = event_target_value(&ev);
-                            save_result(new_result);
+                <div class="result-buttons">
+                    <button
+                        class=move || {
+                            if result_value.get() == "win" {
+                                "result-btn result-btn-win active"
+                            } else {
+                                "result-btn result-btn-win"
+                            }
                         }
 
-                        on:blur=move |_| set_editing_result.set(false)
-                        autofocus
+                        on:click=move |_| {
+                            if result_value.get() != "win" {
+                                save_result("win".to_string());
+                            }
+                        }
                     >
-                        <option value="win" selected=move || result_value.get() == "win">
-                            "勝ち"
-                        </option>
-                        <option value="loss" selected=move || result_value.get() == "loss">
-                            "負け"
-                        </option>
-                    </select>
-                </Show>
+                        "○"
+                    </button>
+                    <button
+                        class=move || {
+                            if result_value.get() == "loss" {
+                                "result-btn result-btn-loss active"
+                            } else {
+                                "result-btn result-btn-loss"
+                            }
+                        }
+
+                        on:click=move |_| {
+                            if result_value.get() != "loss" {
+                                save_result("loss".to_string());
+                            }
+                        }
+                    >
+                        "×"
+                    </button>
+                </div>
 
                 <div class="match-menu">
                     <button
