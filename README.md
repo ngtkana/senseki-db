@@ -24,6 +24,22 @@
 - ✅ 順序保証（match_order）
 - ✅ 自動タイムスタンプ管理
 
+## プロジェクト構造
+
+```
+senseki-db/
+├── Cargo.toml          # ワークスペース定義
+├── cli/                # CLIアプリケーション
+│   ├── Cargo.toml
+│   └── src/
+├── entity/             # SeaORM Entity（自動生成）
+│   ├── Cargo.toml
+│   └── src/
+└── migration/          # データベースマイグレーション
+    ├── Cargo.toml
+    └── src/
+```
+
 ## 開発環境セットアップ
 
 ### 前提条件
@@ -172,4 +188,3 @@ psql -h 127.0.0.1 -U postgres -d senseki -f schema.sql
 - [ ] 既存データのインポートスクリプト
 - [ ] 統計・分析機能の実装
 - [ ] エクスポート機能（CSV/テキスト）
-
