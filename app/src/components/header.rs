@@ -1,7 +1,9 @@
 use leptos::prelude::*;
 
 use crate::api::Character;
+use crate::components::main_content::CharacterSelector;
 
+#[allow(dead_code)]
 fn normalize_for_search(s: &str) -> String {
     s.to_lowercase()
         .chars()
@@ -9,6 +11,7 @@ fn normalize_for_search(s: &str) -> String {
         .collect()
 }
 
+#[allow(dead_code)]
 fn matches_search(character: &Character, query: &str) -> bool {
     if query.is_empty() {
         return true;
@@ -53,7 +56,7 @@ pub fn Header(
     // フィルタリングされたキャラクターリスト
     let filtered_characters = move || {
         let query = search_query.get();
-        let mut chars = characters.get();
+        let chars = characters.get();
         let filtered: Vec<_> = chars
             .iter()
             .filter(|c| matches_search(c, &query))

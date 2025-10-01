@@ -1,10 +1,10 @@
 use leptos::logging;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos::wasm_bindgen::JsCast;
-use leptos::web_sys;
 
 use crate::api::{self, Character, Match, UpdateMatchRequest};
+
+use super::character_selector::CharacterSelector;
 
 #[component]
 pub fn MatchItem(
@@ -18,21 +18,13 @@ pub fn MatchItem(
     _on_match_deleted: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
     let initial_comment = match_data.comment.clone().unwrap_or_default();
-    let (editing_char, set_editing_char) = signal(false);
-    let (editing_opp, set_editing_opp) = signal(false);
     let (comment_value, set_comment_value) = signal(initial_comment.clone());
-    let (dropdown_pos, set_dropdown_pos) = signal((0.0, 0.0));
 
     let char_id = characters
         .iter()
         .find(|c| c.name == char_name)
-        .map(|c| c.id)
-        .unwrap_or(0);
-    let opp_id = characters
-        .iter()
-        .find(|c| c.name == opp_name)
-        .map(|c| c.id)
-        .unwrap_or(0);
+        .map(|c| c.id);
+    let opp_id = characters.iter().find(|c| c.name == opp_name).map(|c| c.id);
 
     let (selected_char_id, set_selected_char_id) = signal(char_id);
     let (selected_opp_id, set_selected_opp_id) = signal(opp_id);
@@ -61,6 +53,7 @@ pub fn MatchItem(
     };
 
     let save_character = move |new_char_id: i32| {
+        set_selected_char_id.set(Some(new_char_id));
         spawn_local(async move {
             let req = UpdateMatchRequest {
                 character_id: Some(new_char_id),
@@ -71,7 +64,6 @@ pub fn MatchItem(
             match api::update_match(match_id, req).await {
                 Ok(_) => {
                     logging::log!("自キャラ更新成功");
-                    set_editing_char.set(false);
                 }
                 Err(e) => {
                     logging::error!("自キャラ更新失敗: {}", e);
@@ -81,6 +73,7 @@ pub fn MatchItem(
     };
 
     let save_opponent = move |new_opp_id: i32| {
+        set_selected_opp_id.set(Some(new_opp_id));
         spawn_local(async move {
             let req = UpdateMatchRequest {
                 character_id: None,
@@ -91,7 +84,6 @@ pub fn MatchItem(
             match api::update_match(match_id, req).await {
                 Ok(_) => {
                     logging::log!("相手キャラ更新成功");
-                    set_editing_opp.set(false);
                 }
                 Err(e) => {
                     logging::error!("相手キャラ更新失敗: {}", e);
@@ -120,28 +112,8 @@ pub fn MatchItem(
         });
     };
 
-    let characters_for_char_info = characters.clone();
-    let get_char_info = move |id: i32| {
-        characters_for_char_info
-            .iter()
-            .find(|c| c.id == id)
-            .map(|c| (c.name.clone(), c.fighter_key.clone()))
-            .unwrap_or_default()
-    };
-
-    let characters_for_opp_info = characters.clone();
-    let get_opp_info = move |id: i32| {
-        characters_for_opp_info
-            .iter()
-            .find(|c| c.id == id)
-            .map(|c| (c.name.clone(), c.fighter_key.clone()))
-            .unwrap_or_default()
-    };
-
-    let mut characters_for_char_select = characters.clone();
-    characters_for_char_select.sort_by_key(|c| c.id);
-    let mut characters_for_opp_select = characters.clone();
-    characters_for_opp_select.sort_by_key(|c| c.id);
+    let characters_for_char = characters.clone();
+    let characters_for_opp = characters.clone();
 
     view! {
         <div class=move || if is_selected { "match-item selected" } else { "match-item" }>
@@ -159,171 +131,21 @@ pub fn MatchItem(
                 />
                 <div class="match-number">{match_number}</div>
                 <div class="match-characters">
-                    <Show when=move || editing_char.get()>
-                        <div class="char-dropdown-overlay" on:click=move |_| set_editing_char.set(false)>
-                            <div
-                                class="char-dropdown"
-                                style=move || {
-                                    let (left, top) = dropdown_pos.get();
-                                    format!("left: {}px; top: {}px;", left, top)
-                                }
-                                on:click=|e| e.stop_propagation()
-                            >
-                                {characters_for_char_select
-                                    .iter()
-                                    .map(|c| {
-                                        let char_id = c.id;
-                                        let char_name = c.name.clone();
-                                        let fighter_key = c.fighter_key.clone();
-                                        view! {
-                                            <div
-                                                class="char-dropdown-item"
-                                                on:click=move |_| {
-                                                    set_selected_char_id.set(char_id);
-                                                    save_character(char_id);
-                                                }
-                                            >
-                                                <img
-                                                    src=format!("/public/fighters/{}.png", fighter_key)
-                                                    class="character-icon"
-                                                    alt=char_name.clone()
-                                                />
-                                                <span>{char_name}</span>
-                                            </div>
-                                        }
-                                    })
-                                    .collect_view()}
-                            </div>
-                        </div>
-                    </Show>
-
-                    <div
-                        class="char-display editable"
-                        on:click=move |ev| {
-                            if let Some(element) = ev.current_target() {
-                                if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
-                                    let elem = el.as_ref() as &web_sys::Element;
-                                    let rect = elem.get_bounding_client_rect();
-                                    let window_height = web_sys::window()
-                                        .and_then(|w| w.inner_height().ok())
-                                        .and_then(|h| h.as_f64())
-                                        .unwrap_or(600.0);
-
-                                    // ドロップダウンの高さ（最大400px）
-                                    let dropdown_height = 400.0;
-                                    let space_below = window_height - rect.bottom();
-
-                                    // 下に十分なスペースがない場合は上に表示
-                                    let top = if space_below < dropdown_height {
-                                        rect.top() - dropdown_height
-                                    } else {
-                                        rect.bottom()
-                                    };
-
-                                    set_dropdown_pos.set((rect.left(), top));
-                                }
-                            }
-                            set_editing_char.set(true);
-                        }
-                    >
-                        {move || {
-                            let (name, key) = get_char_info(selected_char_id.get());
-                            view! {
-                                <>
-                                    <img
-                                        src=format!("/public/fighters/{}.png", key)
-                                        class="character-icon"
-                                        alt=name.clone()
-                                    />
-                                    <span>{name}</span>
-                                </>
-                            }
-                        }}
-                    </div>
+                    <CharacterSelector
+                        characters=characters_for_char
+                        selected_id=selected_char_id.into()
+                        on_select=save_character
+                        show_icon=false
+                    />
 
                     <span class="vs-text">" vs "</span>
 
-                    <Show when=move || editing_opp.get()>
-                        <div class="char-dropdown-overlay" on:click=move |_| set_editing_opp.set(false)>
-                            <div
-                                class="char-dropdown"
-                                style=move || {
-                                    let (left, top) = dropdown_pos.get();
-                                    format!("left: {}px; top: {}px;", left, top)
-                                }
-                                on:click=|e| e.stop_propagation()
-                            >
-                                {characters_for_opp_select
-                                    .iter()
-                                    .map(|c| {
-                                        let char_id = c.id;
-                                        let char_name = c.name.clone();
-                                        let fighter_key = c.fighter_key.clone();
-                                        view! {
-                                            <div
-                                                class="char-dropdown-item"
-                                                on:click=move |_| {
-                                                    set_selected_opp_id.set(char_id);
-                                                    save_opponent(char_id);
-                                                }
-                                            >
-                                                <img
-                                                    src=format!("/public/fighters/{}.png", fighter_key)
-                                                    class="character-icon"
-                                                    alt=char_name.clone()
-                                                />
-                                                <span>{char_name}</span>
-                                            </div>
-                                        }
-                                    })
-                                    .collect_view()}
-                            </div>
-                        </div>
-                    </Show>
-
-                    <div
-                        class="char-display editable"
-                        on:click=move |ev| {
-                            if let Some(element) = ev.current_target() {
-                                if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
-                                    let elem = el.as_ref() as &web_sys::Element;
-                                    let rect = elem.get_bounding_client_rect();
-                                    let window_height = web_sys::window()
-                                        .and_then(|w| w.inner_height().ok())
-                                        .and_then(|h| h.as_f64())
-                                        .unwrap_or(600.0);
-
-                                    // ドロップダウンの高さ（最大400px）
-                                    let dropdown_height = 400.0;
-                                    let space_below = window_height - rect.bottom();
-
-                                    // 下に十分なスペースがない場合は上に表示
-                                    let top = if space_below < dropdown_height {
-                                        rect.top() - dropdown_height
-                                    } else {
-                                        rect.bottom()
-                                    };
-
-                                    set_dropdown_pos.set((rect.left(), top));
-                                }
-                            }
-                            set_editing_opp.set(true);
-                        }
-                    >
-                        {move || {
-                            let (name, key) = get_opp_info(selected_opp_id.get());
-                            view! {
-                                <>
-                                    <img
-                                        src=format!("/public/fighters/{}.png", key)
-                                        class="character-icon"
-                                        alt=name.clone()
-                                    />
-                                    <span>{name}</span>
-                                </>
-                            }
-                        }}
-                    </div>
+                    <CharacterSelector
+                        characters=characters_for_opp
+                        selected_id=selected_opp_id.into()
+                        on_select=save_opponent
+                        show_icon=false
+                    />
                 </div>
 
                 <input
@@ -334,19 +156,23 @@ pub fn MatchItem(
                     on:blur=move |_| save_comment(false)
                 />
 
-                <div class="result-buttons">
+                <div
+                    class="result-buttons"
+                    on:click=move |_| {
+                        let current = result_value.get();
+                        let new_result = if current == "win" { "loss" } else { "win" };
+                        save_result(new_result.to_string());
+                    }
+                >
                     <button
                         class=move || {
-                            if result_value.get() == "win" {
+                            let result = result_value.get();
+                            if result == "win" {
                                 "result-btn result-btn-win active"
+                            } else if result.is_empty() {
+                                "result-btn result-btn-win unselected"
                             } else {
-                                "result-btn result-btn-win"
-                            }
-                        }
-
-                        on:click=move |_| {
-                            if result_value.get() != "win" {
-                                save_result("win".to_string());
+                                "result-btn result-btn-win inactive"
                             }
                         }
                     >
@@ -354,16 +180,13 @@ pub fn MatchItem(
                     </button>
                     <button
                         class=move || {
-                            if result_value.get() == "loss" {
+                            let result = result_value.get();
+                            if result == "loss" {
                                 "result-btn result-btn-loss active"
+                            } else if result.is_empty() {
+                                "result-btn result-btn-loss unselected"
                             } else {
-                                "result-btn result-btn-loss"
-                            }
-                        }
-
-                        on:click=move |_| {
-                            if result_value.get() != "loss" {
-                                save_result("loss".to_string());
+                                "result-btn result-btn-loss inactive"
                             }
                         }
                     >

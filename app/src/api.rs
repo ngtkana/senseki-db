@@ -74,6 +74,7 @@ pub struct UpdateMatchRequest {
 }
 
 // GSP記録
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GspRecord {
     pub id: i32,
@@ -83,6 +84,7 @@ pub struct GspRecord {
     pub note: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 pub struct CreateGspRecordRequest {
     pub session_id: i32,
@@ -195,6 +197,7 @@ pub async fn delete_match(match_id: i32) -> Result<(), String> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub async fn fetch_gsp_records(session_id: i32) -> Result<Vec<GspRecord>, String> {
     let url = format!("{}/sessions/{}/gsp_records", API_BASE, session_id);
     Request::get(&url)
@@ -206,6 +209,7 @@ pub async fn fetch_gsp_records(session_id: i32) -> Result<Vec<GspRecord>, String
         .map_err(|e| format!("JSON parse failed: {}", e))
 }
 
+#[allow(dead_code)]
 pub async fn create_gsp_record(req: CreateGspRecordRequest) -> Result<GspRecord, String> {
     let url = format!("{}/gsp_records", API_BASE);
     Request::post(&url)

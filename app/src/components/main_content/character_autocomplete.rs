@@ -1,6 +1,5 @@
 use gloo_timers::future::sleep;
 use leptos::prelude::*;
-use leptos::wasm_bindgen::JsCast;
 use leptos::web_sys;
 use std::time::Duration;
 

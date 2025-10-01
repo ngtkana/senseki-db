@@ -1,13 +1,11 @@
 use leptos::logging;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos::wasm_bindgen::JsCast;
-use leptos::web_sys;
 use std::collections::HashSet;
 
 use crate::api::{self, Character, CreateMatchRequest, Match};
 
-use super::character_autocomplete::CharacterAutocomplete;
+use super::character_selector::CharacterSelector;
 use super::match_item::MatchItem;
 
 #[derive(Clone, Debug)]
@@ -268,12 +266,10 @@ fn DraftMatchItem(
     _on_confirm: impl Fn() + 'static + Copy + Send + Sync,
     on_cancel: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
-    let draft_char_id = draft.character_id;
-    let draft_opp_id = draft.opponent_character_id;
+    let (draft_char_id, _) = signal(draft.character_id);
+    let (draft_opp_id, _) = signal(draft.opponent_character_id);
     let draft_result = draft.result.clone();
     let draft_result_2 = draft.result.clone();
-    let draft_result_3 = draft.result.clone();
-    let draft_result_4 = draft.result.clone();
     let draft_comment = draft.comment.clone();
 
     let characters_for_char = characters.clone();
@@ -293,20 +289,22 @@ fn DraftMatchItem(
                 </button>
                 <div class="match-number"></div>
                 <div class="match-characters">
-                    <CharacterAutocomplete
+                    <CharacterSelector
                         characters=characters_for_char
-                        selected_id=draft_char_id
+                        selected_id=draft_char_id.into()
                         on_select=on_character_select
                         placeholder="自キャラ"
+                        show_icon=false
                     />
 
                     <span class="vs-text">" vs "</span>
 
-                    <CharacterAutocomplete
+                    <CharacterSelector
                         characters=characters_for_opp
-                        selected_id=draft_opp_id
+                        selected_id=draft_opp_id.into()
                         on_select=on_opponent_select
                         placeholder="相手"
+                        show_icon=false
                     />
                 </div>
 
