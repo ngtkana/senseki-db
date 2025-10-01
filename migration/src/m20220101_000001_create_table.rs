@@ -268,6 +268,7 @@ impl Iden for Character {
     }
 }
 
+#[allow(clippy::enum_variant_names)]
 enum Session {
     Table,
     Id,
@@ -295,6 +296,7 @@ impl Iden for Session {
     }
 }
 
+#[allow(clippy::enum_variant_names)]
 enum Match {
     Table,
     Id,
