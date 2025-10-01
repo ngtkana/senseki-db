@@ -30,6 +30,9 @@ Thumbs.db
 # Temporary files
 sandbox.sql
 
+# Trunk build output
+app/dist/
+
 
 # Added by cargo
 
@@ -48,3 +51,5 @@ sandbox.sql
 # already existing elements were commented out
 
 #/target
+
+docs
