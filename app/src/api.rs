@@ -31,6 +31,13 @@ pub struct CreateSessionRequest {
     pub notes: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct UpdateSessionRequest {
+    pub session_date: Option<String>,
+    pub title: Option<Option<String>>,
+    pub notes: Option<Option<String>>,
+}
+
 // マッチ
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Match {
@@ -114,6 +121,19 @@ pub async fn create_session(req: CreateSessionRequest) -> Result<Session, String
         .map_err(|e| format!("JSON parse failed: {}", e))
 }
 
+pub async fn update_session(session_id: i32, req: UpdateSessionRequest) -> Result<Session, String> {
+    let url = format!("{}/sessions/{}", API_BASE, session_id);
+    Request::put(&url)
+        .json(&req)
+        .map_err(|e| format!("JSON serialize failed: {}", e))?
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?
+        .json()
+        .await
+        .map_err(|e| format!("JSON parse failed: {}", e))
+}
+
 pub async fn fetch_matches(session_id: i32) -> Result<Vec<Match>, String> {
     let url = format!("{}/sessions/{}/matches", API_BASE, session_id);
     Request::get(&url)
@@ -149,6 +169,24 @@ pub async fn update_match(match_id: i32, req: UpdateMatchRequest) -> Result<Matc
         .json()
         .await
         .map_err(|e| format!("JSON parse failed: {}", e))
+}
+
+pub async fn delete_session(session_id: i32) -> Result<(), String> {
+    let url = format!("{}/sessions/{}", API_BASE, session_id);
+    Request::delete(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+    Ok(())
+}
+
+pub async fn delete_match(match_id: i32) -> Result<(), String> {
+    let url = format!("{}/matches/{}", API_BASE, match_id);
+    Request::delete(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+    Ok(())
 }
 
 pub async fn fetch_gsp_records(session_id: i32) -> Result<Vec<GspRecord>, String> {

@@ -9,6 +9,14 @@ pub struct CreateSessionRequest {
     pub notes: Option<String>,
 }
 
+// セッション更新リクエスト
+#[derive(Debug, Deserialize)]
+pub struct UpdateSessionRequest {
+    pub session_date: Option<NaiveDate>,
+    pub title: Option<Option<String>>,
+    pub notes: Option<Option<String>>,
+}
+
 // セッションレスポンス
 #[derive(Debug, Serialize)]
 pub struct SessionResponse {

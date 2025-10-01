@@ -77,6 +77,48 @@ pub async fn create(
     }
 }
 
+// マッチ削除
+pub async fn delete(State(state): State<AppState>, Path(id): Path<i32>) -> impl IntoResponse {
+    // マッチを取得
+    let match_record = Matches::find_by_id(id).one(&state.db).await;
+
+    match match_record {
+        Ok(Some(match_record)) => {
+            let active_match: matches::ActiveModel = match_record.into();
+            match active_match.delete(&state.db).await {
+                Ok(_) => (StatusCode::NO_CONTENT).into_response(),
+                Err(e) => {
+                    tracing::error!("Failed to delete match: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(serde_json::json!({
+                            "error": "Failed to delete match"
+                        })),
+                    )
+                        .into_response()
+                }
+            }
+        }
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "error": "Match not found"
+            })),
+        )
+            .into_response(),
+        Err(e) => {
+            tracing::error!("Failed to fetch match: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "error": "Failed to fetch match"
+                })),
+            )
+                .into_response()
+        }
+    }
+}
+
 // マッチ更新
 pub async fn update(
     State(state): State<AppState>,

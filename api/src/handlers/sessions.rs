@@ -8,7 +8,7 @@ use entity::{matches, prelude::*, sessions};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set};
 
 use crate::{
-    models::{CreateSessionRequest, SessionResponse},
+    models::{CreateSessionRequest, SessionResponse, UpdateSessionRequest},
     AppState,
 };
 
@@ -141,6 +141,128 @@ pub async fn create(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(serde_json::json!({
                     "error": "Failed to create session"
+                })),
+            )
+                .into_response()
+        }
+    }
+}
+
+// セッション更新
+pub async fn update(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+    Json(req): Json<UpdateSessionRequest>,
+) -> impl IntoResponse {
+    // 既存のセッションを取得
+    let session = Sessions::find_by_id(id).one(&state.db).await;
+
+    match session {
+        Ok(Some(session)) => {
+            let mut active_session: sessions::ActiveModel = session.into();
+
+            // 更新するフィールドを設定
+            if let Some(session_date) = req.session_date {
+                active_session.session_date = Set(session_date);
+            }
+            if let Some(title) = req.title {
+                active_session.title = Set(title);
+            }
+            if let Some(notes) = req.notes {
+                active_session.notes = Set(notes);
+            }
+
+            match active_session.update(&state.db).await {
+                Ok(updated_session) => {
+                    // マッチ数と勝敗を集計
+                    let matches = Matches::find()
+                        .filter(matches::Column::SessionId.eq(updated_session.id))
+                        .all(&state.db)
+                        .await
+                        .unwrap_or_default();
+
+                    let match_count = matches.len() as i64;
+                    let wins = matches.iter().filter(|m| m.result == "win").count() as i64;
+                    let losses = matches.iter().filter(|m| m.result == "loss").count() as i64;
+
+                    let response = SessionResponse {
+                        id: updated_session.id,
+                        session_date: updated_session.session_date,
+                        title: updated_session.title,
+                        notes: updated_session.notes,
+                        match_count,
+                        wins,
+                        losses,
+                    };
+                    (StatusCode::OK, Json(response)).into_response()
+                }
+                Err(e) => {
+                    tracing::error!("Failed to update session: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(serde_json::json!({
+                            "error": "Failed to update session"
+                        })),
+                    )
+                        .into_response()
+                }
+            }
+        }
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "error": "Session not found"
+            })),
+        )
+            .into_response(),
+        Err(e) => {
+            tracing::error!("Failed to fetch session: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "error": "Failed to fetch session"
+                })),
+            )
+                .into_response()
+        }
+    }
+}
+
+// セッション削除
+pub async fn delete(State(state): State<AppState>, Path(id): Path<i32>) -> impl IntoResponse {
+    // セッションを取得
+    let session = Sessions::find_by_id(id).one(&state.db).await;
+
+    match session {
+        Ok(Some(session)) => {
+            let active_session: sessions::ActiveModel = session.into();
+            match active_session.delete(&state.db).await {
+                Ok(_) => (StatusCode::NO_CONTENT).into_response(),
+                Err(e) => {
+                    tracing::error!("Failed to delete session: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(serde_json::json!({
+                            "error": "Failed to delete session"
+                        })),
+                    )
+                        .into_response()
+                }
+            }
+        }
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "error": "Session not found"
+            })),
+        )
+            .into_response(),
+        Err(e) => {
+            tracing::error!("Failed to fetch session: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "error": "Failed to fetch session"
                 })),
             )
                 .into_response()

@@ -56,10 +56,18 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/characters/{id}", get(characters::get))
         // セッション
         .route("/api/sessions", get(sessions::list).post(sessions::create))
-        .route("/api/sessions/{id}", get(sessions::get))
+        .route(
+            "/api/sessions/{id}",
+            get(sessions::get)
+                .put(sessions::update)
+                .delete(sessions::delete),
+        )
         // マッチ
         .route("/api/matches", post(matches::create))
-        .route("/api/matches/{id}", put(matches::update))
+        .route(
+            "/api/matches/{id}",
+            put(matches::update).delete(matches::delete),
+        )
         .route(
             "/api/sessions/{session_id}/matches",
             get(matches::list_by_session),
