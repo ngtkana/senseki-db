@@ -1,6 +1,8 @@
 use leptos::logging;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
+use leptos::wasm_bindgen::JsCast;
+use leptos::web_sys;
 
 use crate::api::{self, Character, Match, UpdateMatchRequest};
 
@@ -19,6 +21,7 @@ pub fn MatchItem(
     let (comment_value, set_comment_value) = signal(initial_comment.clone());
     let (show_menu, set_show_menu) = signal(false);
     let (show_delete_confirm, set_show_delete_confirm) = signal(false);
+    let (dropdown_pos, set_dropdown_pos) = signal((0.0, 0.0));
 
     let char_id = characters
         .iter()
@@ -151,8 +154,10 @@ pub fn MatchItem(
             .unwrap_or_default()
     };
 
-    let characters_for_char_select = characters.clone();
-    let characters_for_opp_select = characters.clone();
+    let mut characters_for_char_select = characters.clone();
+    characters_for_char_select.sort_by_key(|c| c.id);
+    let mut characters_for_opp_select = characters.clone();
+    characters_for_opp_select.sort_by_key(|c| c.id);
 
     let handle_delete = move || {
         set_show_delete_confirm.set(true);
@@ -177,101 +182,139 @@ pub fn MatchItem(
         <div class="match-item">
             <div class="match-row">
                 <div class="match-characters">
-                    <Show
-                        when=move || editing_char.get()
-                        fallback=move || {
+                    <Show when=move || editing_char.get()>
+                        <div class="char-dropdown-overlay" on:click=move |_| set_editing_char.set(false)>
+                            <div
+                                class="char-dropdown"
+                                style=move || {
+                                    let (left, top) = dropdown_pos.get();
+                                    format!("left: {}px; top: {}px;", left, top)
+                                }
+                                on:click=|e| e.stop_propagation()
+                            >
+                                {characters_for_char_select
+                                    .iter()
+                                    .map(|c| {
+                                        let char_id = c.id;
+                                        let char_name = c.name.clone();
+                                        let fighter_key = c.fighter_key.clone();
+                                        view! {
+                                            <div
+                                                class="char-dropdown-item"
+                                                on:click=move |_| {
+                                                    set_selected_char_id.set(char_id);
+                                                    save_character(char_id);
+                                                }
+                                            >
+                                                <img
+                                                    src=format!("/public/fighters/{}.png", fighter_key)
+                                                    class="character-icon"
+                                                    alt=char_name.clone()
+                                                />
+                                                <span>{char_name}</span>
+                                            </div>
+                                        }
+                                    })
+                                    .collect_view()}
+                            </div>
+                        </div>
+                    </Show>
+
+                    <div
+                        class="char-display editable"
+                        on:click=move |ev| {
+                            if let Some(element) = ev.current_target() {
+                                if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
+                                    let elem = el.as_ref() as &web_sys::Element;
+                                    let rect = elem.get_bounding_client_rect();
+                                    set_dropdown_pos.set((rect.left(), rect.bottom()));
+                                }
+                            }
+                            set_editing_char.set(true);
+                        }
+                    >
+                        {move || {
                             let (name, key) = get_char_info(selected_char_id.get());
                             view! {
-                                <div
-                                    class="char-display editable"
-                                    on:click=move |_| set_editing_char.set(true)
-                                >
+                                <>
                                     <img
                                         src=format!("/public/fighters/{}.png", key)
                                         class="character-icon"
                                         alt=name.clone()
                                     />
                                     <span>{name}</span>
-                                </div>
+                                </>
                             }
-                        }
-                    >
-
-                        <select
-                            class="char-select"
-                            on:change=move |ev| {
-                                let new_id = event_target_value(&ev).parse().unwrap_or(0);
-                                set_selected_char_id.set(new_id);
-                                save_character(new_id);
-                            }
-
-                            on:blur=move |_| set_editing_char.set(false)
-                            autofocus
-                        >
-                            {characters_for_char_select
-                                .iter()
-                                .map(|c| {
-                                    let char_id = c.id;
-                                    let is_selected = selected_char_id.get() == char_id;
-                                    view! {
-                                        <option value=char_id selected=is_selected>
-                                            {c.name.clone()}
-                                        </option>
-                                    }
-                                })
-                                .collect_view()}
-
-                        </select>
-                    </Show>
+                        }}
+                    </div>
 
                     <span class="vs-text">" vs "</span>
 
-                    <Show
-                        when=move || editing_opp.get()
-                        fallback=move || {
+                    <Show when=move || editing_opp.get()>
+                        <div class="char-dropdown-overlay" on:click=move |_| set_editing_opp.set(false)>
+                            <div
+                                class="char-dropdown"
+                                style=move || {
+                                    let (left, top) = dropdown_pos.get();
+                                    format!("left: {}px; top: {}px;", left, top)
+                                }
+                                on:click=|e| e.stop_propagation()
+                            >
+                                {characters_for_opp_select
+                                    .iter()
+                                    .map(|c| {
+                                        let char_id = c.id;
+                                        let char_name = c.name.clone();
+                                        let fighter_key = c.fighter_key.clone();
+                                        view! {
+                                            <div
+                                                class="char-dropdown-item"
+                                                on:click=move |_| {
+                                                    set_selected_opp_id.set(char_id);
+                                                    save_opponent(char_id);
+                                                }
+                                            >
+                                                <img
+                                                    src=format!("/public/fighters/{}.png", fighter_key)
+                                                    class="character-icon"
+                                                    alt=char_name.clone()
+                                                />
+                                                <span>{char_name}</span>
+                                            </div>
+                                        }
+                                    })
+                                    .collect_view()}
+                            </div>
+                        </div>
+                    </Show>
+
+                    <div
+                        class="char-display editable"
+                        on:click=move |ev| {
+                            if let Some(element) = ev.current_target() {
+                                if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
+                                    let elem = el.as_ref() as &web_sys::Element;
+                                    let rect = elem.get_bounding_client_rect();
+                                    set_dropdown_pos.set((rect.left(), rect.bottom()));
+                                }
+                            }
+                            set_editing_opp.set(true);
+                        }
+                    >
+                        {move || {
                             let (name, key) = get_opp_info(selected_opp_id.get());
                             view! {
-                                <div
-                                    class="char-display editable"
-                                    on:click=move |_| set_editing_opp.set(true)
-                                >
+                                <>
                                     <img
                                         src=format!("/public/fighters/{}.png", key)
                                         class="character-icon"
                                         alt=name.clone()
                                     />
                                     <span>{name}</span>
-                                </div>
+                                </>
                             }
-                        }
-                    >
-
-                        <select
-                            class="char-select"
-                            on:change=move |ev| {
-                                let new_id = event_target_value(&ev).parse().unwrap_or(0);
-                                set_selected_opp_id.set(new_id);
-                                save_opponent(new_id);
-                            }
-
-                            on:blur=move |_| set_editing_opp.set(false)
-                            autofocus
-                        >
-                            {characters_for_opp_select
-                                .iter()
-                                .map(|c| {
-                                    let char_id = c.id;
-                                    let is_selected = selected_opp_id.get() == char_id;
-                                    view! {
-                                        <option value=char_id selected=is_selected>
-                                            {c.name.clone()}
-                                        </option>
-                                    }
-                                })
-                                .collect_view()}
-
-                        </select>
-                    </Show>
+                        }}
+                    </div>
                 </div>
 
                 <input
