@@ -17,6 +17,34 @@ struct DraftMatch {
     comment: String,
 }
 
+/// 共通のマッチ行レイアウトコンポーネント
+#[component]
+pub(super) fn MatchRowLayout<LC, CS, RB, CI>(
+    left_control: LC,
+    match_number: Option<usize>,
+    character_selector: CS,
+    result_buttons: RB,
+    comment_input: CI,
+) -> impl IntoView
+where
+    LC: IntoView + 'static,
+    CS: IntoView + 'static,
+    RB: IntoView + 'static,
+    CI: IntoView + 'static,
+{
+    view! {
+        <div class="match-row">
+            {left_control}
+            <div class="match-number">
+                {match_number.map(|n| n.to_string()).unwrap_or_default()}
+            </div>
+            {character_selector}
+            {result_buttons}
+            {comment_input}
+        </div>
+    }
+}
+
 #[component]
 pub fn MatchList(
     session_id: i32,
@@ -294,69 +322,87 @@ fn DraftMatchItem(
     let characters_for_char = characters.clone();
     let characters_for_opp = characters.clone();
 
+    let left_control = view! {
+        <button
+            class="draft-delete-btn"
+            on:click=move |_| {
+                on_cancel();
+            }
+            title="ドラフトを削除"
+        >
+            "×"
+        </button>
+    }
+    .into_view();
+
+    let character_selector = view! {
+        <div class="match-characters">
+            <CharacterSelector
+                characters=characters_for_char
+                selected_id=draft_char_id
+                on_select=on_character_select
+                placeholder="自キャラ"
+                show_icon=false
+            />
+
+            <span class="vs-text">" vs "</span>
+
+            <CharacterSelector
+                characters=characters_for_opp
+                selected_id=draft_opp_id
+                on_select=on_opponent_select
+                placeholder="相手"
+                show_icon=false
+            />
+        </div>
+    }
+    .into_view();
+
+    let result_buttons = view! {
+        <div class="result-buttons">
+            <button
+                class=move || get_result_button_class(&draft_result, "win")
+                on:click=move |ev| {
+                    ev.stop_propagation();
+                    on_win_click();
+                }
+            >
+                "○"
+            </button>
+            <button
+                class=move || get_result_button_class(&draft_result_2, "loss")
+                on:click=move |ev| {
+                    ev.stop_propagation();
+                    on_loss_click();
+                }
+            >
+                "×"
+            </button>
+        </div>
+    }
+    .into_view();
+
+    let comment_input = view! {
+        <input
+            type="text"
+            class="match-comment-input"
+            value=draft_comment
+            on:input=move |ev| {
+                on_comment_change(event_target_value(&ev));
+            }
+        />
+    }
+    .into_view();
+
     view! {
         <div class="match-item draft-match">
-            <div class="match-row">
-                <button
-                    class="draft-delete-btn"
-                    on:click=move |_| {
-                        on_cancel();
-                    }
-                    title="ドラフトを削除"
-                >
-                    "×"
-                </button>
-                <div class="match-number"></div>
-                <div class="match-characters">
-                    <CharacterSelector
-                        characters=characters_for_char
-                        selected_id=draft_char_id
-                        on_select=on_character_select
-                        placeholder="自キャラ"
-                        show_icon=false
-                    />
-
-                    <span class="vs-text">" vs "</span>
-
-                    <CharacterSelector
-                        characters=characters_for_opp
-                        selected_id=draft_opp_id
-                        on_select=on_opponent_select
-                        placeholder="相手"
-                        show_icon=false
-                    />
-                </div>
-
-                <input
-                    type="text"
-                    class="match-comment-input"
-                    value=draft_comment
-                    on:input=move |ev| {
-                        on_comment_change(event_target_value(&ev));
-                    }
-                />
-
-                <div class="result-buttons">
-                    <button
-                        class=move || get_result_button_class(&draft_result, "win")
-                        on:click=move |ev| {
-                            ev.stop_propagation();
-                            on_win_click();
-                        }
-                    >
-                        "○"
-                    </button>
-                    <button
-                        class=move || get_result_button_class(&draft_result_2, "loss")
-                        on:click=move |ev| {
-                            ev.stop_propagation();
-                            on_loss_click();
-                        }
-                    >
-                        "×"
-                    </button>
-                </div>
-            </div>
+            <MatchRowLayout
+                left_control=left_control
+                match_number=None
+                character_selector=character_selector
+                result_buttons=result_buttons
+                comment_input=comment_input
+            />
         </div>
     }
 }

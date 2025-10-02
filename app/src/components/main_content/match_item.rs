@@ -6,6 +6,7 @@ use crate::api::{self, Character, Match, UpdateMatchRequest};
 use crate::utils::match_result::get_result_button_class;
 
 use super::character_selector::CharacterSelector;
+use super::match_list::MatchRowLayout;
 
 #[component]
 pub fn MatchItem(
@@ -116,63 +117,81 @@ pub fn MatchItem(
     let characters_for_char = characters.clone();
     let characters_for_opp = characters.clone();
 
+    let left_control = view! {
+        <input
+            type="checkbox"
+            class="match-checkbox"
+            checked=is_selected
+            on:click=move |ev| {
+                ev.stop_propagation();
+                let shift_key = ev.shift_key();
+                let ctrl_key = ev.ctrl_key() || ev.meta_key();
+                on_match_clicked(shift_key, ctrl_key);
+            }
+        />
+    }
+    .into_view();
+
+    let character_selector = view! {
+        <div class="match-characters">
+            <CharacterSelector
+                characters=characters_for_char
+                selected_id=selected_char_id
+                on_select=save_character
+                show_icon=false
+            />
+
+            <span class="vs-text">" vs "</span>
+
+            <CharacterSelector
+                characters=characters_for_opp
+                selected_id=selected_opp_id
+                on_select=save_opponent
+                show_icon=false
+            />
+        </div>
+    }
+    .into_view();
+
+    let result_buttons = view! {
+        <div
+            class="result-buttons"
+            on:click=move |_| {
+                let current = result_value.get();
+                let new_result = if current == "win" { "loss" } else { "win" };
+                save_result(new_result.to_string());
+            }
+        >
+            <button class=move || get_result_button_class(&result_value.get(), "win")>
+                "○"
+            </button>
+            <button class=move || get_result_button_class(&result_value.get(), "loss")>
+                "×"
+            </button>
+        </div>
+    }
+    .into_view();
+
+    let comment_input = view! {
+        <input
+            type="text"
+            class="match-comment-input"
+            value=comment_value
+            on:input=move |ev| set_comment_value.set(event_target_value(&ev))
+            on:blur=move |_| save_comment(false)
+        />
+    }
+    .into_view();
+
     view! {
         <div class=move || if is_selected { "match-item selected" } else { "match-item" }>
-            <div class="match-row">
-                <input
-                    type="checkbox"
-                    class="match-checkbox"
-                    checked=is_selected
-                    on:click=move |ev| {
-                        ev.stop_propagation();
-                        let shift_key = ev.shift_key();
-                        let ctrl_key = ev.ctrl_key() || ev.meta_key();
-                        on_match_clicked(shift_key, ctrl_key);
-                    }
-                />
-                <div class="match-number">{match_number}</div>
-                <div class="match-characters">
-                    <CharacterSelector
-                        characters=characters_for_char
-                        selected_id=selected_char_id
-                        on_select=save_character
-                        show_icon=false
-                    />
-
-                    <span class="vs-text">" vs "</span>
-
-                    <CharacterSelector
-                        characters=characters_for_opp
-                        selected_id=selected_opp_id
-                        on_select=save_opponent
-                        show_icon=false
-                    />
-                </div>
-
-                <div
-                    class="result-buttons"
-                    on:click=move |_| {
-                        let current = result_value.get();
-                        let new_result = if current == "win" { "loss" } else { "win" };
-                        save_result(new_result.to_string());
-                    }
-                >
-                    <button class=move || get_result_button_class(&result_value.get(), "win")>
-                        "○"
-                    </button>
-                    <button class=move || get_result_button_class(&result_value.get(), "loss")>
-                        "×"
-                    </button>
-                </div>
-
-                <input
-                    type="text"
-                    class="match-comment-input"
-                    value=comment_value
-                    on:input=move |ev| set_comment_value.set(event_target_value(&ev))
-                    on:blur=move |_| save_comment(false)
-                />
-            </div>
+            <MatchRowLayout
+                left_control=left_control
+                match_number=Some(match_number)
+                character_selector=character_selector
+                result_buttons=result_buttons
+                comment_input=comment_input
+            />
         </div>
     }
 }
