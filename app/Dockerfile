@@ -47,29 +47,11 @@ RUN trunk build --release
 # 実行ステージ - nginx
 FROM nginx:alpine
 
-# nginxの設定ファイルをコピー
+# ビルド成果物をコピー
 COPY --from=builder /app/app/dist /usr/share/nginx/html
 
-# カスタムnginx設定（SPAのルーティング対応 + APIプロキシ）
-RUN echo 'server { \
-    listen 80; \
-    server_name localhost; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    location /api/ { \
-    proxy_pass http://senseki-api:3000/api/; \
-    proxy_http_version 1.1; \
-    proxy_set_header Upgrade $http_upgrade; \
-    proxy_set_header Connection "upgrade"; \
-    proxy_set_header Host $host; \
-    proxy_set_header X-Real-IP $remote_addr; \
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
-    proxy_set_header X-Forwarded-Proto $scheme; \
-    } \
-    location / { \
-    try_files $uri $uri/ /index.html; \
-    } \
-    }' > /etc/nginx/conf.d/default.conf
+# カスタムnginx設定をコピー
+COPY app/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

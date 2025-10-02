@@ -4,18 +4,19 @@ services:
     image: postgres:16
     container_name: senseki-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: senseki
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-senseki}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   # マイグレーション
   migration:
@@ -24,7 +25,7 @@ services:
       dockerfile: migration/Dockerfile
     container_name: senseki-migration
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/senseki
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-senseki}
     depends_on:
       db:
         condition: service_healthy
@@ -36,13 +37,19 @@ services:
       dockerfile: api/Dockerfile
     container_name: senseki-api
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/senseki
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-senseki}
       RUST_LOG: senseki_api=debug,tower_http=debug
     ports:
-      - "0.0.0.0:3000:3000"
+      - "127.0.0.1:${API_PORT:-3000}:3000"
     depends_on:
       migration:
         condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:3000/api/characters || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
   # フロントエンド
@@ -52,9 +59,16 @@ services:
       dockerfile: app/Dockerfile
     container_name: senseki-app
     ports:
-      - "0.0.0.0:8080:80"
+      - "127.0.0.1:${APP_PORT:-8080}:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     restart: unless-stopped
 
 volumes:

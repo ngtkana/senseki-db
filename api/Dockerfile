@@ -42,7 +42,7 @@ RUN cargo build --release --manifest-path api/Cargo.toml
 FROM debian:bookworm-slim
 
 RUN apt-get update && \
-    apt-get install -y ca-certificates libssl3 && \
+    apt-get install -y ca-certificates libssl3 curl && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/target/release/senseki-api /usr/local/bin/senseki-api
