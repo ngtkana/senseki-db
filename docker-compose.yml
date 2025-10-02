@@ -1,0 +1,61 @@
+services:
+  # PostgreSQLデータベース
+  db:
+    image: postgres:16
+    container_name: senseki-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: senseki
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # マイグレーション
+  migration:
+    build:
+      context: .
+      dockerfile: migration/Dockerfile
+    container_name: senseki-migration
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/senseki
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # APIサーバー
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: senseki-api
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/senseki
+      RUST_LOG: senseki_api=debug,tower_http=debug
+    ports:
+      - "3000:3000"
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # フロントエンド
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    container_name: senseki-app
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

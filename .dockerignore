@@ -1,0 +1,42 @@
+# Rust
+target/
+**/*.rs.bk
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+README.md
+*.md
+
+# Scripts
+scripts/
+
+# Environment
+.env
+.env.local
+
+# Build artifacts
+dist/
+app/dist/
+
+# Node (if any)
+node_modules/

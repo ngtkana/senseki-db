@@ -4,7 +4,34 @@
 
 ## セットアップ
 
-### 1. データベース起動
+### 方法1: Docker Compose（推奨）
+
+すべてのサービスを一括で起動できます。
+
+```bash
+# 初回起動（ビルド含む）
+docker compose up --build
+
+# 通常起動
+docker compose up
+
+# バックグラウンド起動
+docker compose up -d
+
+# 停止
+docker compose down
+
+# データも削除して停止
+docker compose down -v
+```
+
+起動後、以下のURLでアクセスできます：
+- Webアプリ: http://localhost:8080
+- API: http://localhost:3000
+
+### 方法2: 個別起動（開発用）
+
+#### 1. データベース起動
 
 ```bash
 docker run -d \
@@ -15,20 +42,20 @@ docker run -d \
   postgres:16
 ```
 
-### 2. マイグレーション実行
+#### 2. マイグレーション実行
 
 ```bash
 cargo run --manifest-path migration/Cargo.toml
 ```
 
-### 3. APIサーバー起動
+#### 3. APIサーバー起動
 
 ```bash
 cd api && cargo run
 # → http://127.0.0.1:3000
 ```
 
-### 4. Webアプリ起動
+#### 4. Webアプリ起動
 
 ```bash
 cd app && trunk serve
@@ -56,6 +83,15 @@ cd app && trunk serve
 - **フロントエンド**: Leptos 0.8 (Rust WASM)
 - **バックエンド**: Axum 0.8
 - **データベース**: PostgreSQL 16 + SeaORM 1.1
+- **Rust**: 1.90.0（`rust-toolchain.toml`で管理）
+
+### Rustバージョンの更新について
+
+プロジェクトのRustバージョンは以下のファイルで管理されています：
+- `rust-toolchain.toml` - ローカル開発環境用
+- `*/Dockerfile` - Docker環境用（各Dockerfileの`FROM rust:X.XX`）
+
+新しいRustバージョンがリリースされた際は、これらのファイルを手動で更新する必要があります。
 
 ## プロジェクト構造
 
