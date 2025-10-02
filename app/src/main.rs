@@ -9,6 +9,13 @@ mod utils;
 use api::{Character, Session};
 use components::{Header, MainContent, Sidebar};
 
+/// セッションを取得して新しい順にソート
+async fn fetch_and_sort_sessions() -> Result<Vec<Session>, String> {
+    let mut sessions = api::fetch_sessions().await?;
+    sessions.sort_by(|a, b| b.id.cmp(&a.id));
+    Ok(sessions)
+}
+
 const SELECTED_CHARACTER_KEY: &str = "senseki_selected_character_id";
 
 fn get_stored_character_id() -> Option<i32> {
@@ -40,9 +47,7 @@ fn App() -> impl IntoView {
 
     // 初回データ取得
     spawn_local(async move {
-        if let Ok(mut data) = api::fetch_sessions().await {
-            // 新しい順にソート
-            data.sort_by(|a, b| b.id.cmp(&a.id));
+        if let Ok(data) = fetch_and_sort_sessions().await {
             // 最新セッションを自動選択
             if let Some(latest) = data.first() {
                 set_selected_session_id.set(Some(latest.id));
@@ -71,10 +76,7 @@ fn App() -> impl IntoView {
     let reload_sessions = move || {
         let current_selected = selected_session_id.get_untracked();
         spawn_local(async move {
-            if let Ok(mut data) = api::fetch_sessions().await {
-                // 新しい順にソート
-                data.sort_by(|a, b| b.id.cmp(&a.id));
-
+            if let Ok(data) = fetch_and_sort_sessions().await {
                 // 現在選択中のセッションが削除された場合、別のセッションを選択
                 if let Some(current_id) = current_selected {
                     if !data.iter().any(|s| s.id == current_id) {
@@ -94,9 +96,7 @@ fn App() -> impl IntoView {
 
     let handle_session_added = move |new_session_id: i32| {
         spawn_local(async move {
-            if let Ok(mut data) = api::fetch_sessions().await {
-                // 新しい順にソート
-                data.sort_by(|a, b| b.id.cmp(&a.id));
+            if let Ok(data) = fetch_and_sort_sessions().await {
                 set_sessions.set(data);
                 // 新しく追加されたセッションを選択
                 set_selected_session_id.set(Some(new_session_id));

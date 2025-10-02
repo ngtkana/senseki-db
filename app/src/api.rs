@@ -3,6 +3,58 @@ use serde::{Deserialize, Serialize};
 
 const API_BASE: &str = "http://127.0.0.1:3000/api";
 
+/// API呼び出しの共通ヘルパー関数（GET）
+async fn api_get<T: for<'de> Deserialize<'de>>(url: &str) -> Result<T, String> {
+    Request::get(url)
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?
+        .json()
+        .await
+        .map_err(|e| format!("JSON parse failed: {}", e))
+}
+
+/// API呼び出しの共通ヘルパー関数（POST）
+async fn api_post<T: Serialize, R: for<'de> Deserialize<'de>>(
+    url: &str,
+    body: &T,
+) -> Result<R, String> {
+    Request::post(url)
+        .json(body)
+        .map_err(|e| format!("JSON serialize failed: {}", e))?
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?
+        .json()
+        .await
+        .map_err(|e| format!("JSON parse failed: {}", e))
+}
+
+/// API呼び出しの共通ヘルパー関数（PUT）
+async fn api_put<T: Serialize, R: for<'de> Deserialize<'de>>(
+    url: &str,
+    body: &T,
+) -> Result<R, String> {
+    Request::put(url)
+        .json(body)
+        .map_err(|e| format!("JSON serialize failed: {}", e))?
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?
+        .json()
+        .await
+        .map_err(|e| format!("JSON parse failed: {}", e))
+}
+
+/// API呼び出しの共通ヘルパー関数（DELETE）
+async fn api_delete(url: &str) -> Result<(), String> {
+    Request::delete(url)
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+    Ok(())
+}
+
 // キャラクター
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Character {
@@ -95,130 +147,47 @@ pub struct CreateGspRecordRequest {
 
 // API関数
 pub async fn fetch_characters() -> Result<Vec<Character>, String> {
-    let url = format!("{}/characters", API_BASE);
-    Request::get(&url)
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("JSON parse failed: {}", e))
+    api_get(&format!("{}/characters", API_BASE)).await
 }
 
 pub async fn fetch_sessions() -> Result<Vec<Session>, String> {
-    let url = format!("{}/sessions", API_BASE);
-    Request::get(&url)
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("JSON parse failed: {}", e))
+    api_get(&format!("{}/sessions", API_BASE)).await
 }
 
 pub async fn create_session(req: CreateSessionRequest) -> Result<Session, String> {
-    let url = format!("{}/sessions", API_BASE);
-    Request::post(&url)
-        .json(&req)
-        .map_err(|e| format!("JSON serialize failed: {}", e))?
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("JSON parse failed: {}", e))
+    api_post(&format!("{}/sessions", API_BASE), &req).await
 }
 
 pub async fn update_session(session_id: i32, req: UpdateSessionRequest) -> Result<Session, String> {
-    let url = format!("{}/sessions/{}", API_BASE, session_id);
-    Request::put(&url)
-        .json(&req)
-        .map_err(|e| format!("JSON serialize failed: {}", e))?
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("JSON parse failed: {}", e))
+    api_put(&format!("{}/sessions/{}", API_BASE, session_id), &req).await
 }
 
 pub async fn fetch_matches(session_id: i32) -> Result<Vec<Match>, String> {
-    let url = format!("{}/sessions/{}/matches", API_BASE, session_id);
-    Request::get(&url)
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("JSON parse failed: {}", e))
+    api_get(&format!("{}/sessions/{}/matches", API_BASE, session_id)).await
 }
 
 pub async fn create_match(req: CreateMatchRequest) -> Result<Match, String> {
-    let url = format!("{}/matches", API_BASE);
-    Request::post(&url)
-        .json(&req)
-        .map_err(|e| format!("JSON serialize failed: {}", e))?
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("JSON parse failed: {}", e))
+    api_post(&format!("{}/matches", API_BASE), &req).await
 }
 
 pub async fn update_match(match_id: i32, req: UpdateMatchRequest) -> Result<Match, String> {
-    let url = format!("{}/matches/{}", API_BASE, match_id);
-    Request::put(&url)
-        .json(&req)
-        .map_err(|e| format!("JSON serialize failed: {}", e))?
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("JSON parse failed: {}", e))
+    api_put(&format!("{}/matches/{}", API_BASE, match_id), &req).await
 }
 
 pub async fn delete_session(session_id: i32) -> Result<(), String> {
-    let url = format!("{}/sessions/{}", API_BASE, session_id);
-    Request::delete(&url)
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?;
-    Ok(())
+    api_delete(&format!("{}/sessions/{}", API_BASE, session_id)).await
 }
 
 pub async fn delete_match(match_id: i32) -> Result<(), String> {
-    let url = format!("{}/matches/{}", API_BASE, match_id);
-    Request::delete(&url)
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?;
-    Ok(())
+    api_delete(&format!("{}/matches/{}", API_BASE, match_id)).await
 }
 
 #[allow(dead_code)]
 pub async fn fetch_gsp_records(session_id: i32) -> Result<Vec<GspRecord>, String> {
-    let url = format!("{}/sessions/{}/gsp_records", API_BASE, session_id);
-    Request::get(&url)
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("JSON parse failed: {}", e))
+    api_get(&format!("{}/sessions/{}/gsp_records", API_BASE, session_id)).await
 }
 
 #[allow(dead_code)]
 pub async fn create_gsp_record(req: CreateGspRecordRequest) -> Result<GspRecord, String> {
-    let url = format!("{}/gsp_records", API_BASE);
-    Request::post(&url)
-        .json(&req)
-        .map_err(|e| format!("JSON serialize failed: {}", e))?
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("JSON parse failed: {}", e))
+    api_post(&format!("{}/gsp_records", API_BASE), &req).await
 }
