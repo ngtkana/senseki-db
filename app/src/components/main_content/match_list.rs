@@ -44,7 +44,7 @@ pub fn MatchList(
         set_draft_match.set(Some(DraftMatch {
             character_id: selected_character_id.get(),
             opponent_character_id: None,
-            result: "win".to_string(),
+            result: "".to_string(),
             comment: String::new(),
         }));
     };
@@ -70,7 +70,7 @@ pub fn MatchList(
                     set_draft_match.set(Some(DraftMatch {
                         character_id: selected_character_id.get(),
                         opponent_character_id: None,
-                        result: "win".to_string(),
+                        result: "".to_string(),
                         comment: String::new(),
                     }));
                 }
@@ -91,20 +91,36 @@ pub fn MatchList(
     let update_draft_opponent = move |opp_id: i32| {
         if let Some(mut draft) = draft_match.get() {
             draft.opponent_character_id = Some(opp_id);
-            // 相手キャラが選択されたら自動的に確定
-            if let Some(char_id) = draft.character_id {
-                save_draft_match(char_id, opp_id, draft.result.clone(), draft.comment.clone());
+            // result が空でない場合のみ自動確定
+            if !draft.result.is_empty() {
+                if let Some(char_id) = draft.character_id {
+                    save_draft_match(char_id, opp_id, draft.result.clone(), draft.comment.clone());
+                    return;
+                }
             }
+            set_draft_match.set(Some(draft));
         }
     };
 
-    let flip_draft_result = move || {
+    let handle_win_click = move || {
         if let Some(mut draft) = draft_match.get() {
-            // flip: 勝ち→負け、負け→勝ち、空→勝ち
             draft.result = match draft.result.as_str() {
-                "win" => "loss".to_string(),
-                "loss" => "win".to_string(),
+                "" => "win".to_string(),     // 未確定 → 勝ち
+                "win" => "loss".to_string(), // 勝ち → 負け（トグル）
+                "loss" => "win".to_string(), // 負け → 勝ち（トグル）
                 _ => "win".to_string(),
+            };
+            set_draft_match.set(Some(draft));
+        }
+    };
+
+    let handle_loss_click = move || {
+        if let Some(mut draft) = draft_match.get() {
+            draft.result = match draft.result.as_str() {
+                "" => "loss".to_string(),    // 未確定 → 負け
+                "win" => "loss".to_string(), // 勝ち → 負け（トグル）
+                "loss" => "win".to_string(), // 負け → 勝ち（トグル）
+                _ => "loss".to_string(),
             };
             set_draft_match.set(Some(draft));
         }
@@ -238,7 +254,8 @@ pub fn MatchList(
                             characters=chars
                             on_character_select=update_draft_character
                             on_opponent_select=update_draft_opponent
-                            on_result_change=flip_draft_result
+                            on_win_click=handle_win_click
+                            on_loss_click=handle_loss_click
                             on_comment_change=update_draft_comment
                             _on_confirm=confirm_draft
                             on_cancel=cancel_draft
@@ -262,7 +279,8 @@ fn DraftMatchItem(
     characters: Vec<Character>,
     on_character_select: impl Fn(i32) + 'static + Copy + Send + Sync,
     on_opponent_select: impl Fn(i32) + 'static + Copy + Send + Sync,
-    on_result_change: impl Fn() + 'static + Copy + Send + Sync,
+    on_win_click: impl Fn() + 'static + Copy + Send + Sync,
+    on_loss_click: impl Fn() + 'static + Copy + Send + Sync,
     on_comment_change: impl Fn(String) + 'static + Copy + Send + Sync,
     _on_confirm: impl Fn() + 'static + Copy + Send + Sync,
     on_cancel: impl Fn() + 'static + Copy + Send + Sync,
@@ -318,11 +336,23 @@ fn DraftMatchItem(
                     }
                 />
 
-                <div class="result-buttons" on:click=move |_| on_result_change()>
-                    <button class=move || get_result_button_class(&draft_result, "win")>
+                <div class="result-buttons">
+                    <button
+                        class=move || get_result_button_class(&draft_result, "win")
+                        on:click=move |ev| {
+                            ev.stop_propagation();
+                            on_win_click();
+                        }
+                    >
                         "○"
                     </button>
-                    <button class=move || get_result_button_class(&draft_result_2, "loss")>
+                    <button
+                        class=move || get_result_button_class(&draft_result_2, "loss")
+                        on:click=move |ev| {
+                            ev.stop_propagation();
+                            on_loss_click();
+                        }
+                    >
                         "×"
                     </button>
                 </div>
