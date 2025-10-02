@@ -7,6 +7,7 @@
 
 /* Variables */
 :root {
+    /* Colors */
     --bg-primary: #ffffff;
     --bg-secondary: #fafafa;
     --bg-hover: #f0f0f0;
@@ -21,6 +22,39 @@
     --icon-size-small: 24px;
     --icon-size-medium: 30px;
     --icon-size-large: 40px;
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+
+    /* Layout */
+    --header-height: 60px;
+    --sidebar-width: 300px;
+
+    /* Character Grid */
+    --grid-columns: 8;
+    --grid-gap: 8px;
+    --grid-padding: 12px;
+
+    /* Match Item */
+    --match-gap: 4px;
+    --match-padding-x: 12px;
+
+    /* Result Button */
+    --result-btn-size: 24px;
+    --result-btn-font: 16px;
+    --result-btn-radius: 20px;
+
+    /* Font Sizes */
+    --font-size-xs: 12px;
+    --font-size-sm: 13px;
+    --font-size-base: 14px;
+    --font-size-md: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 20px;
 }
 
 /* 統一されたキャラクターアイコンスタイル */
@@ -1074,6 +1108,23 @@ textarea.form-input {
 
 /* Responsive */
 @media (max-width: 768px) {
+
+    /* CSS変数の上書き（最優先） */
+    :root {
+        --icon-size-small: 20px;
+        --icon-size-medium: 28px;
+        --icon-size-large: 36px;
+        --spacing-lg: 16px;
+        --grid-columns: 6;
+        --result-btn-size: 28px;
+        --result-btn-font: 16px;
+        --result-btn-radius: 14px;
+        --font-size-xs: 12px;
+        --font-size-sm: 13px;
+        --font-size-lg: 18px;
+    }
+
+    /* Layout */
     .app-main {
         grid-template-columns: 1fr;
     }
@@ -1083,15 +1134,15 @@ textarea.form-input {
     }
 
     .header {
-        padding: 0 16px;
+        padding: 0 var(--spacing-lg);
     }
 
     .header h1 {
-        font-size: 16px;
+        font-size: var(--spacing-lg);
     }
 
     .main-content {
-        padding: 16px;
+        padding: var(--spacing-lg);
         padding-bottom: 100px;
     }
 
@@ -1106,11 +1157,11 @@ textarea.form-input {
         transform: translateX(-50%);
     }
 
-    /* キャラクターグリッドを4列に */
+    /* キャラクターグリッドを6列に */
     .character-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        padding: 16px;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+        padding: 12px;
     }
 
     .character-grid-item {
@@ -1147,13 +1198,13 @@ textarea.form-input {
     /* 勝敗ボタンのサイズ調整（タップしやすく） */
     .result-buttons {
         flex-shrink: 0;
-        border-radius: 16px;
+        border-radius: 14px;
     }
 
     .result-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 18px;
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
     }
 
     /* コメント入力欄 */
@@ -1203,14 +1254,18 @@ textarea.form-input {
         font-size: 18px;
     }
 
-    /* キャラクター選択ドロップダウン */
-    .char-dropdown {
-        min-width: 180px;
-        max-height: 300px;
-    }
+    /* キャラクター選択ドロップダウン（マッチ相手選択用） */
+    .char-dropdown-overlay .character-dropdown-selector {
+        /* 画面幅に合わせる */
+        min-width: auto;
+        width: calc(100vw - 32px);
+        max-width: 350px;
+        max-height: 70vh;
 
-    .char-dropdown-item {
-        padding: 10px 12px;
+        /* 中央配置 */
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
     }
 
     /* オートコンプリート */
@@ -1243,12 +1298,5 @@ textarea.form-input {
     .confirm-dialog {
         width: calc(100% - 32px);
         padding: 20px;
-    }
-
-    /* アイコンサイズの調整 */
-    :root {
-        --icon-size-small: 20px;
-        --icon-size-medium: 28px;
-        --icon-size-large: 36px;
     }
 }
