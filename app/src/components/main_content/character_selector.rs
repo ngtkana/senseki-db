@@ -12,6 +12,8 @@ pub fn CharacterSelector(
     on_select: impl Fn(i32) + 'static + Copy + Send + Sync,
     #[prop(optional)] placeholder: Option<&'static str>,
     #[prop(optional)] show_icon: bool,
+    #[prop(optional)] auto_open: bool,
+    #[prop(optional)] on_close: Option<Box<dyn Fn() + 'static>>,
 ) -> impl IntoView {
     let (show_dropdown, set_show_dropdown) = signal(false);
     let (search_query, set_search_query) = signal(String::new());
@@ -39,6 +41,32 @@ pub fn CharacterSelector(
             .and_then(|id| characters_for_display.iter().find(|c| c.id == id).cloned())
     };
 
+    // auto_open が true の場合、マウント時に自動的に開く
+    Effect::new(move || {
+        if auto_open && !show_dropdown.get() {
+            if let Some(element) = trigger_ref.get() {
+                let elem = element.as_ref() as &web_sys::Element;
+                let rect = elem.get_bounding_client_rect();
+                let window_height = web_sys::window()
+                    .and_then(|w| w.inner_height().ok())
+                    .and_then(|h| h.as_f64())
+                    .unwrap_or(600.0);
+
+                let dropdown_height = 500.0;
+                let space_below = window_height - rect.bottom();
+                let show_above = space_below < dropdown_height;
+                let top = if show_above {
+                    rect.top() - dropdown_height
+                } else {
+                    rect.bottom()
+                };
+
+                set_dropdown_pos.set((rect.left(), top, show_above));
+                set_show_dropdown.set(true);
+            }
+        }
+    });
+
     // ドロップダウンを開いたときに入力欄にフォーカス
     Effect::new(move || {
         if show_dropdown.get() {
@@ -47,6 +75,9 @@ pub fn CharacterSelector(
             }
         } else {
             set_search_query.set(String::new());
+            if let Some(ref callback) = on_close {
+                callback();
+            }
         }
     });
 
@@ -157,6 +188,13 @@ pub fn CharacterSelector(
                                 on:keydown={
                                     let characters = characters.clone();
                                     move |ev| {
+                                        // Esc キーでドロップダウンを閉じる
+                                        if ev.key() == "Escape" {
+                                            ev.prevent_default();
+                                            set_show_dropdown.set(false);
+                                            return;
+                                        }
+
                                         let query = search_query.get();
                                         let mut chars: Vec<_> = characters
                                             .iter()

@@ -285,7 +285,7 @@ pub fn MatchList(
                             on_win_click=handle_win_click
                             on_loss_click=handle_loss_click
                             on_comment_change=update_draft_comment
-                            _on_confirm=confirm_draft
+                            on_confirm=confirm_draft
                             on_cancel=cancel_draft
                         />
                     }
@@ -310,17 +310,32 @@ fn DraftMatchItem(
     on_win_click: impl Fn() + 'static + Copy + Send + Sync,
     on_loss_click: impl Fn() + 'static + Copy + Send + Sync,
     on_comment_change: impl Fn(String) + 'static + Copy + Send + Sync,
-    _on_confirm: impl Fn() + 'static + Copy + Send + Sync,
+    on_confirm: impl Fn() + 'static + Copy + Send + Sync,
     on_cancel: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
     let (draft_char_id, _) = signal(draft.character_id);
     let (draft_opp_id, _) = signal(draft.opponent_character_id);
     let draft_result = draft.result.clone();
     let draft_result_2 = draft.result.clone();
+    let draft_result_3 = draft.result.clone();
+    let draft_result_4 = draft.result.clone();
     let draft_comment = draft.comment.clone();
+    let draft_comment_2 = draft.comment.clone();
+    let draft_opp_id_for_check = draft.opponent_character_id;
+
+    let result_buttons_ref = NodeRef::<leptos::html::Div>::new();
 
     let characters_for_char = characters.clone();
     let characters_for_opp = characters.clone();
+
+    // 相手キャラが選択されたら result-buttons にフォーカス
+    let handle_opponent_close = move || {
+        if draft_opp_id.get().is_some() {
+            if let Some(element) = result_buttons_ref.get() {
+                let _ = element.focus();
+            }
+        }
+    };
 
     let left_control = view! {
         <button
@@ -353,13 +368,40 @@ fn DraftMatchItem(
                 on_select=on_opponent_select
                 placeholder="相手"
                 show_icon=false
+                auto_open=draft_opp_id_for_check.is_none()
+                on_close=Box::new(handle_opponent_close)
             />
         </div>
     }
     .into_view();
 
     let result_buttons = view! {
-        <div class="result-buttons">
+        <div
+            class="result-buttons"
+            tabindex="0"
+            node_ref=result_buttons_ref
+            on:keydown=move |ev| {
+                let key = ev.key();
+                match key.as_str() {
+                    "w" | "W" => {
+                        ev.prevent_default();
+                        on_win_click();
+                    }
+                    "l" | "L" => {
+                        ev.prevent_default();
+                        on_loss_click();
+                    }
+                    "Enter" => {
+                        ev.prevent_default();
+                        // 相手キャラと勝敗が入力済みの場合のみ確定
+                        if draft_opp_id.get().is_some() && !draft_result_4.is_empty() {
+                            on_confirm();
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        >
             <button
                 class=move || get_result_button_class(&draft_result, "win")
                 on:click=move |ev| {
@@ -395,7 +437,21 @@ fn DraftMatchItem(
     .into_view();
 
     view! {
-        <div class="match-item draft-match">
+        <div
+            class="match-item draft-match"
+            on:keydown=move |ev| {
+                // Esc キーでドラフトをキャンセル（未入力の場合のみ）
+                if ev.key() == "Escape" {
+                    if draft_opp_id.get().is_none()
+                        && draft_result_3.is_empty()
+                        && draft_comment_2.is_empty()
+                    {
+                        ev.prevent_default();
+                        on_cancel();
+                    }
+                }
+            }
+        >
             <MatchRowLayout
                 left_control=left_control
                 match_number=None
