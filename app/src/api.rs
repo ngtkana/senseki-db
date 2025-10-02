@@ -1,7 +1,7 @@
 use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 
-const API_BASE: &str = "http://localhost:3000/api";
+const API_BASE: &str = "/api";
 
 /// API呼び出しの共通ヘルパー関数（GET）
 async fn api_get<T: for<'de> Deserialize<'de>>(url: &str) -> Result<T, String> {
