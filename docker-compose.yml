@@ -39,7 +39,7 @@ services:
       DATABASE_URL: postgres://postgres:password@db:5432/senseki
       RUST_LOG: senseki_api=debug,tower_http=debug
     ports:
-      - "3000:3000"
+      - "0.0.0.0:3000:3000"
     depends_on:
       migration:
         condition: service_completed_successfully
@@ -52,7 +52,7 @@ services:
       dockerfile: app/Dockerfile
     container_name: senseki-app
     ports:
-      - "8080:80"
+      - "0.0.0.0:8080:80"
     depends_on:
       - api
     restart: unless-stopped
