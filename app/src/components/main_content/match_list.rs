@@ -4,7 +4,7 @@ use leptos::task::spawn_local;
 use leptos::wasm_bindgen::JsCast;
 use std::collections::HashSet;
 
-use crate::api::{self, Character, CreateMatchRequest, Match};
+use crate::api::{self, Character, CreateMatchRequest, Match, MatchResult};
 use crate::utils::match_result::get_result_button_class;
 
 use super::character_selector::CharacterSelector;
@@ -14,7 +14,7 @@ use super::match_item::MatchItem;
 struct DraftMatch {
     character_id: Option<i32>,
     opponent_character_id: Option<i32>,
-    result: String,
+    result: Option<MatchResult>,
     comment: String,
 }
 
@@ -73,42 +73,43 @@ pub fn MatchList(
         set_draft_match.set(Some(DraftMatch {
             character_id: selected_character_id.get(),
             opponent_character_id: None,
-            result: "".to_string(),
+            result: None,
             comment: String::new(),
         }));
     };
 
-    let save_draft_match = move |char_id: i32, opp_id: i32, result: String, comment: String| {
-        spawn_local(async move {
-            let req = CreateMatchRequest {
-                session_id,
-                character_id: char_id,
-                opponent_character_id: opp_id,
-                result,
-                comment: if comment.is_empty() {
-                    None
-                } else {
-                    Some(comment)
-                },
-            };
-            match api::create_match(req).await {
-                Ok(_) => {
-                    logging::log!("マッチ追加成功");
-                    on_match_added();
-                    // 次のドラフトを自動作成
-                    set_draft_match.set(Some(DraftMatch {
-                        character_id: selected_character_id.get(),
-                        opponent_character_id: None,
-                        result: "".to_string(),
-                        comment: String::new(),
-                    }));
+    let save_draft_match =
+        move |char_id: i32, opp_id: i32, result: MatchResult, comment: String| {
+            spawn_local(async move {
+                let req = CreateMatchRequest {
+                    session_id,
+                    character_id: char_id,
+                    opponent_character_id: opp_id,
+                    result,
+                    comment: if comment.is_empty() {
+                        None
+                    } else {
+                        Some(comment)
+                    },
+                };
+                match api::create_match(req).await {
+                    Ok(_) => {
+                        logging::log!("マッチ追加成功");
+                        on_match_added();
+                        // 次のドラフトを自動作成
+                        set_draft_match.set(Some(DraftMatch {
+                            character_id: selected_character_id.get(),
+                            opponent_character_id: None,
+                            result: None,
+                            comment: String::new(),
+                        }));
+                    }
+                    Err(e) => {
+                        logging::error!("マッチ追加失敗: {}", e);
+                    }
                 }
-                Err(e) => {
-                    logging::error!("マッチ追加失敗: {}", e);
-                }
-            }
-        });
-    };
+            });
+        };
 
     let update_draft_character = move |char_id: i32| {
         if let Some(mut draft) = draft_match.get() {
@@ -120,10 +121,10 @@ pub fn MatchList(
     let update_draft_opponent = move |opp_id: i32| {
         if let Some(mut draft) = draft_match.get() {
             draft.opponent_character_id = Some(opp_id);
-            // result が空でない場合のみ自動確定
-            if !draft.result.is_empty() {
+            // result が設定されている場合のみ自動確定
+            if let Some(result) = draft.result {
                 if let Some(char_id) = draft.character_id {
-                    save_draft_match(char_id, opp_id, draft.result.clone(), draft.comment.clone());
+                    save_draft_match(char_id, opp_id, result, draft.comment.clone());
                     return;
                 }
             }
@@ -133,11 +134,10 @@ pub fn MatchList(
 
     let handle_win_click = move || {
         if let Some(mut draft) = draft_match.get() {
-            draft.result = match draft.result.as_str() {
-                "" => "win".to_string(),     // 未確定 → 勝ち
-                "win" => "loss".to_string(), // 勝ち → 負け（トグル）
-                "loss" => "win".to_string(), // 負け → 勝ち（トグル）
-                _ => "win".to_string(),
+            draft.result = match draft.result {
+                None => Some(MatchResult::Win),                    // 未確定 → 勝ち
+                Some(MatchResult::Win) => Some(MatchResult::Loss), // 勝ち → 負け（トグル）
+                Some(MatchResult::Loss) => Some(MatchResult::Win), // 負け → 勝ち（トグル）
             };
             set_draft_match.set(Some(draft));
         }
@@ -145,11 +145,10 @@ pub fn MatchList(
 
     let handle_loss_click = move || {
         if let Some(mut draft) = draft_match.get() {
-            draft.result = match draft.result.as_str() {
-                "" => "loss".to_string(),    // 未確定 → 負け
-                "win" => "loss".to_string(), // 勝ち → 負け（トグル）
-                "loss" => "win".to_string(), // 負け → 勝ち（トグル）
-                _ => "loss".to_string(),
+            draft.result = match draft.result {
+                None => Some(MatchResult::Loss),                   // 未確定 → 負け
+                Some(MatchResult::Win) => Some(MatchResult::Loss), // 勝ち → 負け（トグル）
+                Some(MatchResult::Loss) => Some(MatchResult::Win), // 負け → 勝ち（トグル）
             };
             set_draft_match.set(Some(draft));
         }
@@ -164,8 +163,12 @@ pub fn MatchList(
 
     let confirm_draft = move || {
         if let Some(draft) = draft_match.get() {
-            if let (Some(c), Some(o)) = (draft.character_id, draft.opponent_character_id) {
-                save_draft_match(c, o, draft.result.clone(), draft.comment.clone());
+            if let (Some(c), Some(o), Some(r)) = (
+                draft.character_id,
+                draft.opponent_character_id,
+                draft.result,
+            ) {
+                save_draft_match(c, o, r, draft.comment.clone());
             }
         }
     };
@@ -480,7 +483,7 @@ fn DraftMatchItem(
                     "Enter" => {
                         ev.prevent_default();
                         // 相手キャラと勝敗が入力済みの場合のみ確定
-                        if draft_opp_id.get().is_some() && !draft_result_4.is_empty() {
+                        if draft_opp_id.get().is_some() && draft_result_4.is_some() {
                             on_confirm();
                         }
                     }
@@ -489,7 +492,7 @@ fn DraftMatchItem(
             }
         >
             <button
-                class=move || get_result_button_class(&draft_result, "win")
+                class=move || get_result_button_class(draft_result.clone(), MatchResult::Win)
                 on:click=move |ev| {
                     ev.stop_propagation();
                     on_win_click();
@@ -498,7 +501,7 @@ fn DraftMatchItem(
                 "○"
             </button>
             <button
-                class=move || get_result_button_class(&draft_result_2, "loss")
+                class=move || get_result_button_class(draft_result_2.clone(), MatchResult::Loss)
                 on:click=move |ev| {
                     ev.stop_propagation();
                     on_loss_click();
@@ -529,7 +532,7 @@ fn DraftMatchItem(
                 // Esc キーでドラフトをキャンセル（未入力の場合のみ）
                 if ev.key() == "Escape" {
                     if draft_opp_id.get().is_none()
-                        && draft_result_3.is_empty()
+                        && draft_result_3.is_none()
                         && draft_comment_2.is_empty()
                     {
                         ev.prevent_default();

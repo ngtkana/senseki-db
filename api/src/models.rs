@@ -1,5 +1,15 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+use strum_macros::{AsRefStr, EnumString};
+
+// マッチ結果
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsRefStr, EnumString)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum MatchResult {
+    Win,
+    Loss,
+}
 
 // セッション作成リクエスト
 #[derive(Debug, Deserialize)]
@@ -41,7 +51,7 @@ pub struct CreateMatchRequest {
     pub session_id: i32,
     pub character_id: i32,
     pub opponent_character_id: i32,
-    pub result: String, // "win" or "loss"
+    pub result: MatchResult,
     pub comment: Option<String>,
 }
 
@@ -50,7 +60,7 @@ pub struct CreateMatchRequest {
 pub struct UpdateMatchRequest {
     pub character_id: Option<i32>,
     pub opponent_character_id: Option<i32>,
-    pub result: Option<String>,
+    pub result: Option<MatchResult>,
     pub comment: Option<String>,
 }
 
@@ -61,7 +71,7 @@ pub struct MatchResponse {
     pub session_id: i32,
     pub character_name: String,
     pub opponent_character_name: String,
-    pub result: String,
+    pub result: MatchResult,
     pub match_order: i32,
     pub comment: Option<String>,
 }

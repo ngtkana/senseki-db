@@ -2,7 +2,7 @@ use leptos::logging;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
-use crate::api::{self, Character, Match, UpdateMatchRequest};
+use crate::api::{self, Character, Match, MatchResult, UpdateMatchRequest};
 use crate::utils::match_result::get_result_button_class;
 
 use super::character_selector::CharacterSelector;
@@ -32,7 +32,7 @@ pub fn MatchItem(
 
     let (selected_char_id, set_selected_char_id) = signal(char_id);
     let (selected_opp_id, set_selected_opp_id) = signal(opp_id);
-    let (result_value, set_result_value) = signal(match_data.result.clone());
+    let (result_value, set_result_value) = signal(match_data.result);
 
     let match_id = match_data.id;
 
@@ -96,12 +96,12 @@ pub fn MatchItem(
         });
     };
 
-    let save_result = move |new_result: String| {
+    let save_result = move |new_result: MatchResult| {
         spawn_local(async move {
             let req = UpdateMatchRequest {
                 character_id: None,
                 opponent_character_id: None,
-                result: Some(new_result.clone()),
+                result: Some(new_result),
                 comment: None,
             };
             match api::update_match(match_id, req).await {
@@ -160,14 +160,18 @@ pub fn MatchItem(
             class="result-buttons"
             on:click=move |_| {
                 let current = result_value.get();
-                let new_result = if current == "win" { "loss" } else { "win" };
-                save_result(new_result.to_string());
+                let new_result = if current == MatchResult::Win {
+                    MatchResult::Loss
+                } else {
+                    MatchResult::Win
+                };
+                save_result(new_result);
             }
         >
-            <button class=move || get_result_button_class(&result_value.get(), "win")>
+            <button class=move || get_result_button_class(Some(result_value.get()), MatchResult::Win)>
                 "○"
             </button>
-            <button class=move || get_result_button_class(&result_value.get(), "loss")>
+            <button class=move || get_result_button_class(Some(result_value.get()), MatchResult::Loss)>
                 "×"
             </button>
         </div>

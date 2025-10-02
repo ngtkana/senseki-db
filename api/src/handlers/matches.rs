@@ -6,9 +6,10 @@ use axum::{
 };
 use entity::{matches, prelude::*};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set};
+use std::str::FromStr;
 
 use crate::{
-    models::{CreateMatchRequest, MatchResponse, UpdateMatchRequest},
+    models::{CreateMatchRequest, MatchResponse, MatchResult, UpdateMatchRequest},
     AppState,
 };
 
@@ -32,7 +33,7 @@ pub async fn create(
         session_id: Set(req.session_id),
         character_id: Set(req.character_id),
         opponent_character_id: Set(req.opponent_character_id),
-        result: Set(req.result),
+        result: Set(req.result.as_ref().to_string()),
         match_order: Set(max_order + 1),
         comment: Set(req.comment),
         ..Default::default()
@@ -57,7 +58,7 @@ pub async fn create(
                 session_id: match_record.session_id,
                 character_name: character.map(|c| c.name).unwrap_or_default(),
                 opponent_character_name: opponent.map(|c| c.name).unwrap_or_default(),
-                result: match_record.result,
+                result: MatchResult::from_str(&match_record.result).unwrap_or(MatchResult::Loss),
                 match_order: match_record.match_order,
                 comment: match_record.comment,
             };
@@ -140,7 +141,7 @@ pub async fn update(
                 active_match.opponent_character_id = Set(opponent_character_id);
             }
             if let Some(result) = req.result {
-                active_match.result = Set(result);
+                active_match.result = Set(result.as_ref().to_string());
             }
             if let Some(comment) = req.comment {
                 active_match.comment = Set(Some(comment));
@@ -165,7 +166,8 @@ pub async fn update(
                         session_id: updated_match.session_id,
                         character_name: character.map(|c| c.name).unwrap_or_default(),
                         opponent_character_name: opponent.map(|c| c.name).unwrap_or_default(),
-                        result: updated_match.result,
+                        result: MatchResult::from_str(&updated_match.result)
+                            .unwrap_or(MatchResult::Loss),
                         match_order: updated_match.match_order,
                         comment: updated_match.comment,
                     };
@@ -237,7 +239,8 @@ pub async fn list_by_session(
                     session_id: match_record.session_id,
                     character_name: character.map(|c| c.name).unwrap_or_default(),
                     opponent_character_name: opponent.map(|c| c.name).unwrap_or_default(),
-                    result: match_record.result,
+                    result: MatchResult::from_str(&match_record.result)
+                        .unwrap_or(MatchResult::Loss),
                     match_order: match_record.match_order,
                     comment: match_record.comment,
                 });

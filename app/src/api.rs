@@ -3,6 +3,14 @@ use serde::{Deserialize, Serialize};
 
 const API_BASE: &str = "/api";
 
+// マッチ結果
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MatchResult {
+    Win,
+    Loss,
+}
+
 /// API呼び出しの共通ヘルパー関数（GET）
 async fn api_get<T: for<'de> Deserialize<'de>>(url: &str) -> Result<T, String> {
     Request::get(url)
@@ -103,7 +111,7 @@ pub struct Match {
     pub session_id: i32,
     pub character_name: String,
     pub opponent_character_name: String,
-    pub result: String,
+    pub result: MatchResult,
     pub match_order: i32,
     pub comment: Option<String>,
 }
@@ -113,7 +121,7 @@ pub struct CreateMatchRequest {
     pub session_id: i32,
     pub character_id: i32,
     pub opponent_character_id: i32,
-    pub result: String,
+    pub result: MatchResult,
     pub comment: Option<String>,
 }
 
@@ -121,7 +129,7 @@ pub struct CreateMatchRequest {
 pub struct UpdateMatchRequest {
     pub character_id: Option<i32>,
     pub opponent_character_id: Option<i32>,
-    pub result: Option<String>,
+    pub result: Option<MatchResult>,
     pub comment: Option<String>,
 }
 
