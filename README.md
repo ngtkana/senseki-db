@@ -43,6 +43,19 @@ senseki-db/
 
 詳細は `DOCKER.md` を参照
 
+### フロントエンドの手動起動（開発環境）
+
+```bash
+# バックエンドサービスを起動
+docker compose up -d
+
+# フロントエンドを手動起動（ホットリロード有効）
+cd app
+trunk serve --proxy-backend=http://localhost:3000/api/ --proxy-rewrite=/api/
+```
+
+ブラウザで http://localhost:8080 にアクセス
+
 ### 個別起動
 
 ```bash
