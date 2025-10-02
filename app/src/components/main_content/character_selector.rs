@@ -3,6 +3,7 @@ use leptos::wasm_bindgen::JsCast;
 
 use crate::api::Character;
 use crate::utils::character_search::matches_search;
+use crate::utils::keyboard_navigation::handle_grid_keyboard_navigation;
 
 #[component]
 pub fn CharacterSelector(
@@ -164,49 +165,20 @@ pub fn CharacterSelector(
                                             .collect();
                                         chars.sort_by_key(|c| c.id);
                                         let char_count = chars.len() as i32;
-
-                                        if char_count == 0 {
-                                            return;
-                                        }
-
                                         let current_index = cursor_index.get();
-                                        const GRID_COLS: i32 = 8;
 
-                                        match ev.key().as_str() {
-                                            "ArrowLeft" => {
-                                                ev.prevent_default();
-                                                if current_index > 0 {
-                                                    set_cursor_index.set(current_index - 1);
-                                                }
-                                            }
-                                            "ArrowRight" => {
-                                                ev.prevent_default();
-                                                if current_index < char_count - 1 {
-                                                    set_cursor_index.set(current_index + 1);
-                                                }
-                                            }
-                                            "ArrowUp" => {
-                                                ev.prevent_default();
-                                                let new_index = current_index - GRID_COLS;
-                                                if new_index >= 0 {
-                                                    set_cursor_index.set(new_index);
-                                                }
-                                            }
-                                            "ArrowDown" => {
-                                                ev.prevent_default();
-                                                let new_index = current_index + GRID_COLS;
-                                                if new_index < char_count {
-                                                    set_cursor_index.set(new_index);
-                                                }
-                                            }
-                                            "Enter" => {
-                                                ev.prevent_default();
+                                        handle_grid_keyboard_navigation(
+                                            &ev,
+                                            current_index,
+                                            char_count,
+                                            8,
+                                            move |idx| set_cursor_index.set(idx),
+                                            move || {
                                                 if let Some(char) = chars.get(current_index as usize) {
                                                     handle_select(char.id);
                                                 }
-                                            }
-                                            _ => {}
-                                        }
+                                            },
+                                        );
                                     }
                                 }
 

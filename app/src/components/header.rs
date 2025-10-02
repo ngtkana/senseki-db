@@ -2,6 +2,7 @@ use leptos::prelude::*;
 
 use crate::api::Character;
 use crate::utils::character_search::matches_search;
+use crate::utils::keyboard_navigation::handle_grid_keyboard_navigation;
 
 #[component]
 pub fn Header(
@@ -11,6 +12,7 @@ pub fn Header(
 ) -> impl IntoView {
     let (show_dropdown, set_show_dropdown) = signal(false);
     let (search_query, set_search_query) = signal(String::new());
+    let (cursor_index, set_cursor_index) = signal(0_i32);
     let input_ref = NodeRef::<leptos::html::Input>::new();
 
     let selected_character = move || {
@@ -40,6 +42,12 @@ pub fn Header(
         } else {
             set_search_query.set(String::new());
         }
+    });
+
+    // フィルタリング結果が変わったらカーソルを先頭にリセット
+    Effect::new(move || {
+        let _ = search_query.get(); // 依存関係を追加
+        set_cursor_index.set(0);
     });
 
     view! {
@@ -83,6 +91,34 @@ pub fn Header(
                                     on:input=move |ev| {
                                         set_search_query.set(event_target_value(&ev));
                                     }
+
+                                    on:keydown=move |ev| {
+                                        let query = search_query.get();
+                                        let chars_vec = characters.get();
+                                        let mut chars: Vec<_> = chars_vec
+                                            .iter()
+                                            .filter(|c| matches_search(c, &query))
+                                            .cloned()
+                                            .collect();
+                                        chars.sort_by_key(|c| c.id);
+                                        let char_count = chars.len() as i32;
+                                        let current_index = cursor_index.get();
+
+                                        handle_grid_keyboard_navigation(
+                                            &ev,
+                                            current_index,
+                                            char_count,
+                                            8,
+                                            move |idx| set_cursor_index.set(idx),
+                                            move || {
+                                                if let Some(char) = chars.get(current_index as usize) {
+                                                    on_character_select(char.id);
+                                                    set_show_dropdown.set(false);
+                                                }
+                                            },
+                                        );
+                                    }
+
                                     node_ref=input_ref
                                 />
                             </div>
@@ -92,16 +128,19 @@ pub fn Header(
                                 chars.sort_by_key(|c| c.id);
                                 chars
                                     .iter()
-                                    .map(|c| {
+                                    .enumerate()
+                                    .map(|(index, c)| {
                                         let char_id = c.id;
                                         let is_selected = selected_character_id.get() == Some(char_id);
                                         let fighter_key = c.fighter_key.clone();
                                         let char_name = c.name.clone();
                                         let char_name_for_alt = char_name.clone();
+                                        let item_index = index as i32;
                                         view! {
                                             <div
                                                 class="character-grid-item"
                                                 class:selected=move || is_selected
+                                                class:cursored=move || cursor_index.get() == item_index
                                                 on:click=move |_| {
                                                     on_character_select(char_id);
                                                     set_show_dropdown.set(false);
