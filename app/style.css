@@ -270,6 +270,10 @@ body {
     background: transparent;
 }
 
+.session-date-input::-webkit-calendar-picker-indicator {
+    margin-left: -16px;
+}
+
 .session-date-input:focus {
     outline: none;
     background: var(--bg-hover);
