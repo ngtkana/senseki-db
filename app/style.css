@@ -1082,11 +1082,173 @@ textarea.form-input {
         display: none;
     }
 
+    .header {
+        padding: 0 16px;
+    }
+
     .header h1 {
         font-size: 16px;
     }
 
     .main-content {
         padding: 16px;
+        padding-bottom: 100px;
+    }
+
+    /* ドロップダウンの幅を画面に合わせる */
+    .character-dropdown,
+    .character-dropdown-selector {
+        min-width: auto;
+        width: calc(100vw - 32px);
+        max-width: 400px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+    }
+
+    /* キャラクターグリッドを4列に */
+    .character-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .character-grid-item {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+    }
+
+    /* 試合アイテムの調整 */
+    .match-row {
+        gap: 4px;
+    }
+
+    .match-checkbox {
+        width: 18px;
+        height: 18px;
+    }
+
+    .match-number {
+        min-width: 18px;
+        font-size: 13px;
+    }
+
+    /* キャラクター名のフォントサイズ調整 */
+    .match-characters {
+        font-size: 12px;
+    }
+
+    .char-display {
+        padding: 4px 6px;
+        gap: 4px;
+    }
+
+    /* 勝敗ボタンのサイズ調整（タップしやすく） */
+    .result-buttons {
+        flex-shrink: 0;
+        border-radius: 16px;
+    }
+
+    .result-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+    }
+
+    /* コメント入力欄 */
+    .match-comment-input {
+        font-size: 13px;
+        min-width: 0;
+        padding: 4px 6px;
+    }
+
+    /* セッションヘッダーの調整 */
+    .session-title-input {
+        font-size: 18px;
+        padding: 4px 6px;
+    }
+
+    .session-date-input {
+        font-size: 18px;
+        padding: 4px 6px;
+    }
+
+    .session-gsp-row {
+        font-size: 12px;
+        padding: 0 6px;
+    }
+
+    .gsp-input {
+        width: 100px;
+        font-size: 12px;
+        padding: 4px 6px;
+    }
+
+    .session-notes-input {
+        font-size: 13px;
+        padding: 4px 6px;
+    }
+
+    /* マッチ追加ボタン */
+    .add-match-button {
+        padding: 16px;
+        font-size: 15px;
+    }
+
+    /* ドラフト削除ボタン */
+    .draft-delete-btn {
+        width: 18px;
+        height: 18px;
+        font-size: 18px;
+    }
+
+    /* キャラクター選択ドロップダウン */
+    .char-dropdown {
+        min-width: 180px;
+        max-height: 300px;
+    }
+
+    .char-dropdown-item {
+        padding: 10px 12px;
+    }
+
+    /* オートコンプリート */
+    .autocomplete-dropdown {
+        max-height: 250px;
+    }
+
+    .autocomplete-item {
+        padding: 10px 12px;
+    }
+
+    /* モーダル */
+    .modal-content {
+        padding: 24px;
+        width: calc(100% - 32px);
+    }
+
+    /* フォーム */
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    /* メニュー */
+    .menu-button {
+        padding: 6px 10px;
+        font-size: 18px;
+    }
+
+    /* 確認ダイアログ */
+    .confirm-dialog {
+        width: calc(100% - 32px);
+        padding: 20px;
+    }
+
+    /* アイコンサイズの調整 */
+    :root {
+        --icon-size-small: 20px;
+        --icon-size-medium: 28px;
+        --icon-size-large: 36px;
     }
 }
