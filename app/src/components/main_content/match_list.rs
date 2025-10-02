@@ -513,8 +513,7 @@ fn DraftMatchItem(
         >
             <button
                 class=move || get_result_button_class(draft_result.clone(), MatchResult::Win)
-                on:click=move |ev| {
-                    ev.stop_propagation();
+                on:click=move |_| {
                     on_win_click();
                 }
             >
@@ -522,8 +521,7 @@ fn DraftMatchItem(
             </button>
             <button
                 class=move || get_result_button_class(draft_result_2.clone(), MatchResult::Loss)
-                on:click=move |ev| {
-                    ev.stop_propagation();
+                on:click=move |_| {
                     on_loss_click();
                 }
             >
