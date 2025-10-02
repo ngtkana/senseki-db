@@ -2,9 +2,7 @@ use leptos::prelude::*;
 use leptos::wasm_bindgen::JsCast;
 
 use crate::api::Character;
-use crate::components::common::character_icon::{
-    CharacterIcon, CharacterIconPlaceholder, IconSize,
-};
+use crate::components::common::character_icon::{CharacterIcon, CharacterIconPlaceholder};
 use crate::utils::character_search::matches_search;
 use crate::utils::keyboard_navigation::handle_grid_keyboard_navigation;
 
@@ -215,7 +213,6 @@ pub fn CharacterSelector(
                             <CharacterIcon
                                 fighter_key=char.fighter_key
                                 alt=char.name
-                                size=IconSize::Medium
                             />
                         })
                     } else {
@@ -237,13 +234,12 @@ pub fn CharacterSelector(
                             <CharacterIcon
                                 fighter_key=char.fighter_key
                                 alt=char.name
-                                size=IconSize::Medium
                             />
                         }
                             .into_any()
                     } else {
                         view! {
-                            <CharacterIconPlaceholder size=IconSize::Medium/>
+                            <CharacterIconPlaceholder/>
                         }
                             .into_any()
                     }
@@ -261,7 +257,6 @@ pub fn CharacterSelector(
 
                         on:click=|e| e.stop_propagation()
                     >
-                        <div class="dropdown-header">"キャラを選択"</div>
                         <div class="dropdown-search">
                             <input
                                 type="text"
@@ -345,7 +340,6 @@ pub fn CharacterSelector(
                                                     <CharacterIcon
                                                         fighter_key=fighter_key
                                                         alt=char_name_for_alt
-                                                        size=IconSize::Large
                                                     />
                                                 </div>
                                             }

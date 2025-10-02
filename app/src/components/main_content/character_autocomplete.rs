@@ -6,7 +6,7 @@ mod character_autocomplete_impl {
     use std::time::Duration;
 
     use crate::api::Character;
-    use crate::components::common::character_icon::{CharacterIcon, IconSize};
+    use crate::components::common::character_icon::CharacterIcon;
     use crate::utils::character_search::matches_search;
 
     #[component]
@@ -145,7 +145,6 @@ mod character_autocomplete_impl {
                         <CharacterIcon
                             fighter_key=key
                             alt=String::new()
-                            size=IconSize::Small
                         />
                     })
                 }}
@@ -225,7 +224,6 @@ mod character_autocomplete_impl {
                                                 <CharacterIcon
                                                     fighter_key=fighter_key
                                                     alt=char_name.clone()
-                                                    size=IconSize::Small
                                                 />
                                                 <span>{char_name}</span>
                                             </div>

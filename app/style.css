@@ -16,12 +16,10 @@
     --text-primary: #000000;
     --text-secondary: #666666;
     --text-tertiary: #999999;
-    --accent: #0066cc;
 
-    /* Icon sizes */
-    --icon-size-small: 24px;
-    --icon-size-medium: 30px;
-    --icon-size-large: 40px;
+    /* Icon size */
+    --icon-size-small: 30px;
+    --icon-size-medium: 40px;
 
     /* Spacing */
     --spacing-xs: 4px;
@@ -30,24 +28,6 @@
     --spacing-lg: 16px;
     --spacing-xl: 24px;
 
-    /* Layout */
-    --header-height: 60px;
-    --sidebar-width: 300px;
-
-    /* Character Grid */
-    --grid-columns: 8;
-    --grid-gap: 8px;
-    --grid-padding: 12px;
-
-    /* Match Item */
-    --match-gap: 4px;
-    --match-padding-x: 12px;
-
-    /* Result Button */
-    --result-btn-size: 24px;
-    --result-btn-font: 16px;
-    --result-btn-radius: 20px;
-
     /* Font Sizes */
     --font-size-xs: 12px;
     --font-size-sm: 13px;
@@ -55,30 +35,80 @@
     --font-size-md: 16px;
     --font-size-lg: 18px;
     --font-size-xl: 20px;
+
+    /* Character Grid */
+    --grid-columns: 8;
+    --grid-gap: 4px;
+
+    /* Control Buttons */
+    --control-btn-size: 40px;
+    --control-btn-size-mobile: 36px;
+
+    /* Match Item */
+    --match-checkbox-size: 16px;
+    --match-number-width: 24px;
+    --match-number-font: 16px;
+
+    /* Result Buttons */
+    --result-btn-size: 24px;
+    --result-btn-font: 16px;
+    --result-btn-radius: 20px;
+
+    /* Dropdown */
+    --dropdown-min-width: 400px;
+    --dropdown-max-height: 500px;
+
+    /* Header */
+    --header-height: 60px;
+    --header-padding: 24px;
+    --header-title-font: 18px;
+
+    /* Sidebar */
+    --sidebar-width: 300px;
+
+    /* Grid Padding */
+    --grid-padding: 12px;
+
+    /* Dropdown Positioning */
+    --dropdown-top-offset: 50px;
+
+    /* Draft Delete Button */
+    --draft-delete-btn-size: 16px;
+
+    /* Autocomplete */
+    --autocomplete-max-height: 300px;
+
+    /* Char Dropdown */
+    --char-dropdown-max-height: 400px;
+    --char-dropdown-min-width: 200px;
+
+    /* Modal */
+    --modal-padding: 32px;
+    --modal-max-width: 500px;
+
+    /* Session Item */
+    --session-item-padding-y: 4px;
+    --session-item-padding-x: 12px;
+
+    /* Match Item Padding */
+    --match-item-padding-x: 12px;
+
+    /* Main Content Padding */
+    --main-content-padding: 24px;
+    --main-content-padding-bottom: 200px;
 }
 
 /* 統一されたキャラクターアイコンスタイル */
 .character-icon {
+    width: var(--icon-size-small);
+    height: var(--icon-size-small);
     object-fit: contain;
     vertical-align: middle;
 }
 
-.character-icon-small {
+.character-icon-placeholder {
     width: var(--icon-size-small);
     height: var(--icon-size-small);
-}
-
-.character-icon-medium {
-    width: var(--icon-size-medium);
-    height: var(--icon-size-medium);
-}
-
-.character-icon-large {
-    width: var(--icon-size-large);
-    height: var(--icon-size-large);
-}
-
-.character-icon-placeholder {
     border: 2px dashed var(--border-dark);
     background: transparent;
     display: flex;
@@ -89,24 +119,6 @@
     color: var(--text-tertiary);
     border-radius: 4px;
     flex-shrink: 0;
-}
-
-.character-icon-placeholder.character-icon-small {
-    width: var(--icon-size-small);
-    height: var(--icon-size-small);
-    font-size: 14px;
-}
-
-.character-icon-placeholder.character-icon-medium {
-    width: var(--icon-size-medium);
-    height: var(--icon-size-medium);
-    font-size: 18px;
-}
-
-.character-icon-placeholder.character-icon-large {
-    width: var(--icon-size-large);
-    height: var(--icon-size-large);
-    font-size: 20px;
 }
 
 /* Base */
@@ -126,17 +138,17 @@ body {
 
 /* Header */
 .header {
-    height: 60px;
+    height: var(--header-height);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 24px;
+    padding: 0 var(--header-padding);
     border-bottom: 1px solid var(--border);
     background: var(--bg-primary);
 }
 
 .header h1 {
-    font-size: 18px;
+    font-size: var(--header-title-font);
     font-weight: 600;
 }
 
@@ -147,8 +159,8 @@ body {
 }
 
 .session-control-btn {
-    width: 40px;
-    height: 40px;
+    width: var(--control-btn-size);
+    height: var(--control-btn-size);
     border: 1px solid var(--border);
     border-radius: 50%;
     background: var(--bg-primary);
@@ -205,8 +217,8 @@ body {
 }
 
 .character-avatar {
-    width: var(--icon-size-large);
-    height: var(--icon-size-large);
+    width: var(--icon-size-medium);
+    height: var(--icon-size-medium);
     border-radius: 50%;
     overflow: hidden;
     cursor: pointer;
@@ -239,14 +251,14 @@ body {
 
 .character-dropdown {
     position: absolute;
-    top: 50px;
+    top: var(--dropdown-top-offset);
     right: 0;
     background: var(--bg-primary);
     border: 1px solid var(--border);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
-    min-width: 400px;
-    max-height: 500px;
+    min-width: var(--dropdown-min-width);
+    max-height: var(--dropdown-max-height);
     overflow-y: auto;
 }
 
@@ -285,14 +297,14 @@ body {
 
 .character-grid {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 8px;
-    padding: 12px;
+    grid-template-columns: repeat(var(--grid-columns), 1fr);
+    gap: var(--grid-gap);
+    padding: var(--grid-padding);
 }
 
 .character-grid-item {
-    width: var(--icon-size-large);
-    height: var(--icon-size-large);
+    width: var(--icon-size-medium);
+    height: var(--icon-size-medium);
     cursor: pointer;
     border: 2px solid transparent;
     border-radius: 4px;
@@ -327,8 +339,8 @@ body {
 /* Main Layout */
 .app-main {
     display: grid;
-    grid-template-columns: 300px 1fr;
-    height: calc(100vh - 60px);
+    grid-template-columns: var(--sidebar-width) 1fr;
+    height: calc(100vh - var(--header-height));
     overflow: hidden;
 }
 
@@ -340,7 +352,7 @@ body {
 }
 
 .session-item {
-    padding: 4px 12px;
+    padding: var(--session-item-padding-y) var(--session-item-padding-x);
     border-bottom: 1px solid var(--border);
     cursor: pointer;
     background: var(--bg-primary);
@@ -394,8 +406,8 @@ body {
 
 /* Main Content */
 .main-content {
-    padding: 24px;
-    padding-bottom: 200px;
+    padding: var(--main-content-padding);
+    padding-bottom: var(--main-content-padding-bottom);
     overflow-y: auto;
     background: var(--bg-primary);
 }
@@ -515,7 +527,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 12px;
+    padding: 0 var(--match-item-padding-x);
     background: var(--bg-secondary);
     font-size: 13px;
 }
@@ -531,7 +543,7 @@ body {
 }
 
 .match-item {
-    padding: 0 12px;
+    padding: 0 var(--match-item-padding-x);
     border: 1px solid var(--border);
     background: var(--bg-primary);
 }
@@ -565,20 +577,20 @@ body {
 }
 
 .match-checkbox {
-    width: 16px;
-    height: 16px;
+    width: var(--match-checkbox-size);
+    height: var(--match-checkbox-size);
     cursor: pointer;
     flex-shrink: 0;
 }
 
 .draft-delete-btn {
-    width: 16px;
-    height: 16px;
+    width: var(--draft-delete-btn-size);
+    height: var(--draft-delete-btn-size);
     flex-shrink: 0;
     background: none;
     border: none;
     color: #f44336;
-    font-size: 16px;
+    font-size: var(--draft-delete-btn-size);
     font-weight: bold;
     cursor: pointer;
     padding: 0;
@@ -594,10 +606,10 @@ body {
 }
 
 .match-number {
-    font-size: 16px;
+    font-size: var(--match-number-font);
     font-weight: 600;
     color: var(--text-secondary);
-    min-width: 24px;
+    min-width: var(--match-number-width);
     text-align: center;
     flex-shrink: 0;
 }
@@ -642,10 +654,10 @@ body {
     border: 1px solid var(--border);
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    max-height: 400px;
+    max-height: var(--char-dropdown-max-height);
     overflow-y: auto;
     z-index: 1001;
-    min-width: 200px;
+    min-width: var(--char-dropdown-min-width);
 }
 
 .char-dropdown-item {
@@ -667,17 +679,17 @@ body {
     gap: 0;
     margin-left: auto;
     border: 2px solid var(--border);
-    border-radius: 20px;
+    border-radius: var(--result-btn-radius);
     overflow: hidden;
     background: var(--bg-secondary);
 }
 
 .result-btn {
-    width: 24px;
-    height: 24px;
+    width: var(--result-btn-size);
+    height: var(--result-btn-size);
     border: none;
     background: transparent;
-    font-size: 16px;
+    font-size: var(--result-btn-font);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -848,8 +860,8 @@ body {
 
 .modal-content {
     background: var(--bg-primary);
-    padding: 32px;
-    max-width: 500px;
+    padding: var(--modal-padding);
+    max-width: var(--modal-max-width);
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
@@ -1089,8 +1101,8 @@ textarea.form-input {
     border: 1px solid var(--border);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1001;
-    min-width: 400px;
-    max-height: 500px;
+    min-width: var(--dropdown-min-width);
+    max-height: var(--dropdown-max-height);
     overflow-y: auto;
 }
 
@@ -1135,7 +1147,7 @@ textarea.form-input {
     background: var(--bg-primary);
     border: 1px solid var(--border);
     border-top: none;
-    max-height: 300px;
+    max-height: var(--autocomplete-max-height);
     overflow-y: auto;
     z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1171,17 +1183,30 @@ textarea.form-input {
 
     /* CSS変数の上書き（最優先） */
     :root {
-        --icon-size-small: 20px;
-        --icon-size-medium: 28px;
-        --icon-size-large: 36px;
+        --icon-size-small: 24px;
+        --icon-size-medium: 32px;
         --spacing-lg: 16px;
-        --grid-columns: 6;
-        --result-btn-size: 28px;
-        --result-btn-font: 16px;
-        --result-btn-radius: 14px;
         --font-size-xs: 12px;
         --font-size-sm: 13px;
         --font-size-lg: 18px;
+        --grid-columns: 8;
+        --grid-gap: 4px;
+        --control-btn-size: 36px;
+        --match-checkbox-size: 18px;
+        --match-number-width: 18px;
+        --match-number-font: 13px;
+        --result-btn-size: 28px;
+        --result-btn-font: 16px;
+        --result-btn-radius: 14px;
+        --dropdown-min-width: auto;
+        --dropdown-max-height: 70vh;
+        --header-padding: 16px;
+        --grid-padding: 12px;
+        --draft-delete-btn-size: 18px;
+        --autocomplete-max-height: 250px;
+        --modal-padding: 24px;
+        --main-content-padding: 16px;
+        --main-content-padding-bottom: 100px;
     }
 
     /* Layout */
@@ -1193,13 +1218,6 @@ textarea.form-input {
         display: none;
     }
 
-    .header {
-        padding: 0 var(--spacing-lg);
-    }
-
-    .header h1 {
-        font-size: var(--spacing-lg);
-    }
 
     /* セッション操作ボタンをスマホで表示 */
     .header-session-controls {
@@ -1207,30 +1225,19 @@ textarea.form-input {
     }
 
     .session-control-btn {
-        width: 36px;
-        height: 36px;
+        width: var(--control-btn-size-mobile);
+        height: var(--control-btn-size-mobile);
         font-size: 16px;
     }
 
-    .main-content {
-        padding: var(--spacing-lg);
-        padding-bottom: 100px;
-    }
 
     /* ドロップダウンの幅を画面に合わせる */
     .character-dropdown,
     .character-dropdown-selector {
-        min-width: auto;
         width: calc(100vw - 32px);
         max-width: 400px;
     }
 
-    /* キャラクターグリッドを6列に */
-    .character-grid {
-        grid-template-columns: repeat(6, 1fr);
-        gap: 8px;
-        padding: 12px;
-    }
 
     .character-grid-item {
         width: 100%;
@@ -1243,15 +1250,6 @@ textarea.form-input {
         gap: 4px;
     }
 
-    .match-checkbox {
-        width: 18px;
-        height: 18px;
-    }
-
-    .match-number {
-        min-width: 18px;
-        font-size: 13px;
-    }
 
     /* キャラクター名のフォントサイズ調整 */
     .match-characters {
@@ -1266,13 +1264,6 @@ textarea.form-input {
     /* 勝敗ボタンのサイズ調整（タップしやすく） */
     .result-buttons {
         flex-shrink: 0;
-        border-radius: 14px;
-    }
-
-    .result-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 16px;
     }
 
     /* コメント入力欄 */
@@ -1311,30 +1302,18 @@ textarea.form-input {
 
     /* マッチ追加ボタン */
     .add-match-button {
-        padding: 16px;
+        padding: 4px;
         font-size: 15px;
     }
 
-    /* ドラフト削除ボタン */
-    .draft-delete-btn {
-        width: 18px;
-        height: 18px;
-        font-size: 18px;
-    }
 
     /* キャラクター選択ドロップダウン（マッチ相手選択用） */
     .char-dropdown-overlay .character-dropdown-selector {
         /* 画面幅に合わせる */
-        min-width: auto;
         width: calc(100vw - 32px);
         max-width: 350px;
-        max-height: 70vh;
     }
 
-    /* オートコンプリート */
-    .autocomplete-dropdown {
-        max-height: 250px;
-    }
 
     .autocomplete-item {
         padding: 10px 12px;
@@ -1342,7 +1321,6 @@ textarea.form-input {
 
     /* モーダル */
     .modal-content {
-        padding: 24px;
         width: calc(100% - 32px);
     }
 

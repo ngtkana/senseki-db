@@ -1,9 +1,7 @@
 use leptos::prelude::*;
 
 use crate::api::{Character, Session};
-use crate::components::common::character_icon::{
-    CharacterIcon, CharacterIconPlaceholder, IconSize,
-};
+use crate::components::common::character_icon::{CharacterIcon, CharacterIconPlaceholder};
 use crate::utils::character_search::matches_search;
 use crate::utils::keyboard_navigation::handle_grid_keyboard_navigation;
 
@@ -132,13 +130,12 @@ pub fn Header(
                                 <CharacterIcon
                                     fighter_key=char.fighter_key
                                     alt=char.name
-                                    size=IconSize::Large
                                 />
                             }
                                 .into_any()
                         } else {
                             view! {
-                                <CharacterIconPlaceholder size=IconSize::Large/>
+                                <CharacterIconPlaceholder/>
                             }
                                 .into_any()
                         }
@@ -222,7 +219,6 @@ pub fn Header(
                                                 <CharacterIcon
                                                     fighter_key=fighter_key
                                                     alt=char_name_for_alt
-                                                    size=IconSize::Large
                                                 />
                                             </div>
                                         }
