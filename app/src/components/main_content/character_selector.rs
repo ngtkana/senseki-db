@@ -132,7 +132,7 @@ pub fn CharacterSelector(
                         }
                             .into_any()
                     } else {
-                        view! { <span class="placeholder">{placeholder_text}</span> }.into_any()
+                        view! { <div class="character-icon-placeholder">"？"</div> }.into_any()
                     }
                 }}
             </div>
