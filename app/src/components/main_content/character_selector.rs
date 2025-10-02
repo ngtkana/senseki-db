@@ -15,26 +15,14 @@ pub fn CharacterSelector(
     let (show_dropdown, set_show_dropdown) = signal(false);
     let (search_query, set_search_query) = signal(String::new());
     let (dropdown_pos, set_dropdown_pos) = signal((0.0, 0.0, false)); // (left, top, show_above)
+    let (cursor_index, set_cursor_index) = signal(0_i32);
     let input_ref = NodeRef::<leptos::html::Input>::new();
     let trigger_ref = NodeRef::<leptos::html::Div>::new();
 
     let placeholder_text = placeholder.unwrap_or("キャラ名で検索...");
 
-    let characters_for_filter = characters.clone();
     let characters_for_icon = characters.clone();
     let characters_for_display = characters.clone();
-
-    // フィルタリングされたキャラクターリスト
-    let filtered_characters = move || {
-        let query = search_query.get();
-        let mut chars: Vec<_> = characters_for_filter
-            .iter()
-            .filter(|c| matches_search(c, &query))
-            .cloned()
-            .collect();
-        chars.sort_by_key(|c| c.id);
-        chars
-    };
 
     // 選択されたキャラクター情報（アイコン用）
     let selected_character_for_icon = move || {
@@ -59,6 +47,12 @@ pub fn CharacterSelector(
         } else {
             set_search_query.set(String::new());
         }
+    });
+
+    // フィルタリング結果が変わったらカーソルを先頭にリセット
+    Effect::new(move || {
+        let _ = search_query.get(); // 依存関係を追加
+        set_cursor_index.set(0);
     });
 
     let open_dropdown = move |ev: web_sys::MouseEvent| {
@@ -159,38 +153,108 @@ pub fn CharacterSelector(
                                     set_search_query.set(event_target_value(&ev));
                                 }
 
+                                on:keydown={
+                                    let characters = characters.clone();
+                                    move |ev| {
+                                        let query = search_query.get();
+                                        let mut chars: Vec<_> = characters
+                                            .iter()
+                                            .filter(|c| matches_search(c, &query))
+                                            .cloned()
+                                            .collect();
+                                        chars.sort_by_key(|c| c.id);
+                                        let char_count = chars.len() as i32;
+
+                                        if char_count == 0 {
+                                            return;
+                                        }
+
+                                        let current_index = cursor_index.get();
+                                        const GRID_COLS: i32 = 8;
+
+                                        match ev.key().as_str() {
+                                            "ArrowLeft" => {
+                                                ev.prevent_default();
+                                                if current_index > 0 {
+                                                    set_cursor_index.set(current_index - 1);
+                                                }
+                                            }
+                                            "ArrowRight" => {
+                                                ev.prevent_default();
+                                                if current_index < char_count - 1 {
+                                                    set_cursor_index.set(current_index + 1);
+                                                }
+                                            }
+                                            "ArrowUp" => {
+                                                ev.prevent_default();
+                                                let new_index = current_index - GRID_COLS;
+                                                if new_index >= 0 {
+                                                    set_cursor_index.set(new_index);
+                                                }
+                                            }
+                                            "ArrowDown" => {
+                                                ev.prevent_default();
+                                                let new_index = current_index + GRID_COLS;
+                                                if new_index < char_count {
+                                                    set_cursor_index.set(new_index);
+                                                }
+                                            }
+                                            "Enter" => {
+                                                ev.prevent_default();
+                                                if let Some(char) = chars.get(current_index as usize) {
+                                                    handle_select(char.id);
+                                                }
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                }
+
                                 node_ref=input_ref
                             />
                         </div>
                         <div class="character-grid">
                             {
-                                let chars = filtered_characters();
-                                chars
-                                    .iter()
-                                    .map(|c| {
-                                        let char_id = c.id;
-                                        let fighter_key = c.fighter_key.clone();
-                                        let char_name = c.name.clone();
-                                        let char_name_for_alt = char_name.clone();
-                                        view! {
-                                            <div
-                                                class="character-grid-item"
-                                                class:selected=move || selected_id.get() == Some(char_id)
-                                                on:click=move |_| {
-                                                    handle_select(char_id);
-                                                }
+                                let characters = characters.clone();
+                                move || {
+                                    let query = search_query.get();
+                                    let mut chars: Vec<_> = characters
+                                        .iter()
+                                        .filter(|c| matches_search(c, &query))
+                                        .cloned()
+                                        .collect();
+                                    chars.sort_by_key(|c| c.id);
 
-                                                title=char_name
-                                            >
-                                                <img
-                                                    src=format!("/public/fighters/{}.png", fighter_key)
-                                                    class="grid-icon"
-                                                    alt=char_name_for_alt
-                                                />
-                                            </div>
-                                        }
-                                    })
-                                    .collect_view()
+                                    chars
+                                        .iter()
+                                        .enumerate()
+                                        .map(|(index, c)| {
+                                            let char_id = c.id;
+                                            let fighter_key = c.fighter_key.clone();
+                                            let char_name = c.name.clone();
+                                            let char_name_for_alt = char_name.clone();
+                                            let item_index = index as i32;
+                                            view! {
+                                                <div
+                                                    class="character-grid-item"
+                                                    class:selected=move || selected_id.get() == Some(char_id)
+                                                    class:cursored=move || cursor_index.get() == item_index
+                                                    on:click=move |_| {
+                                                        handle_select(char_id);
+                                                    }
+
+                                                    title=char_name
+                                                >
+                                                    <img
+                                                        src=format!("/public/fighters/{}.png", fighter_key)
+                                                        class="grid-icon"
+                                                        alt=char_name_for_alt
+                                                    />
+                                                </div>
+                                            }
+                                        })
+                                        .collect_view()
+                                }
                             }
 
                         </div>

@@ -162,6 +162,12 @@ body {
     box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--text-primary);
 }
 
+.character-grid-item.cursored {
+    border-color: #2196f3;
+    background: #e3f2fd;
+    box-shadow: 0 0 0 2px #2196f3;
+}
+
 .grid-icon {
     width: 100%;
     height: 100%;
