@@ -18,6 +18,8 @@ pub fn MatchItem(
     is_selected: bool,
     on_match_clicked: impl Fn(bool, bool) + 'static + Copy + Send + Sync,
     _on_match_deleted: impl Fn() + 'static + Copy + Send + Sync,
+    #[prop(optional)] on_focus_prev: Option<Box<dyn Fn() + 'static>>,
+    #[prop(optional)] on_focus_next: Option<Box<dyn Fn() + 'static>>,
 ) -> impl IntoView {
     let initial_comment = match_data.comment.clone().unwrap_or_default();
     let (comment_value, set_comment_value) = signal(initial_comment.clone());
@@ -179,6 +181,37 @@ pub fn MatchItem(
             value=comment_value
             on:input=move |ev| set_comment_value.set(event_target_value(&ev))
             on:blur=move |_| save_comment(false)
+            on:keydown=move |ev| {
+                let key = ev.key();
+                match key.as_str() {
+                    "ArrowUp" => {
+                        ev.prevent_default();
+                        if let Some(ref callback) = on_focus_prev {
+                            callback();
+                        }
+                    }
+                    "ArrowDown" => {
+                        ev.prevent_default();
+                        if let Some(ref callback) = on_focus_next {
+                            callback();
+                        }
+                    }
+                    "Enter" => {
+                        if !ev.shift_key() {
+                            ev.prevent_default();
+                            if let Some(ref callback) = on_focus_next {
+                                callback();
+                            }
+                        } else {
+                            ev.prevent_default();
+                            if let Some(ref callback) = on_focus_prev {
+                                callback();
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
         />
     }
     .into_view();

@@ -1,6 +1,7 @@
 use leptos::logging;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
+use leptos::wasm_bindgen::JsCast;
 use std::collections::HashSet;
 
 use crate::api::{self, Character, CreateMatchRequest, Match};
@@ -248,24 +249,109 @@ pub fn MatchList(
             {move || {
                 let chars = characters.get();
                 let selected = selected_matches.get();
-                matches
-                    .get()
+                let all_matches = matches.get();
+                let match_count = all_matches.len();
+
+                all_matches
                     .iter()
                     .enumerate()
                     .map(|(index, m)| {
                         let match_id = m.id;
                         let is_selected = selected.contains(&match_id);
-                        view! {
-                            <MatchItem
-                                match_number=index + 1
-                                match_data=m.clone()
-                                char_name=m.character_name.clone()
-                                opp_name=m.opponent_character_name.clone()
-                                characters=chars.clone()
-                                is_selected=is_selected
-                                on_match_clicked=move |shift, ctrl| handle_match_click(match_id, index, shift, ctrl)
-                                _on_match_deleted=on_match_added
-                            />
+
+                        // 前後のマッチのコメント入力欄にフォーカスを移すコールバック
+                        let focus_prev = if index > 0 {
+                            Some(Box::new(move || {
+                                // 前のマッチのコメント入力欄を探してフォーカス
+                                if let Some(window) = web_sys::window() {
+                                    if let Some(document) = window.document() {
+                                        let selector = format!(".match-item:nth-child({}) .match-comment-input", index);
+                                        if let Ok(Some(element)) = document.query_selector(&selector) {
+                                            if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
+                                                let _ = input.focus();
+                                            }
+                                        }
+                                    }
+                                }
+                            }) as Box<dyn Fn() + 'static>)
+                        } else {
+                            None
+                        };
+
+                        let focus_next = if index < match_count - 1 {
+                            Some(Box::new(move || {
+                                // 次のマッチのコメント入力欄を探してフォーカス
+                                if let Some(window) = web_sys::window() {
+                                    if let Some(document) = window.document() {
+                                        let selector = format!(".match-item:nth-child({}) .match-comment-input", index + 2);
+                                        if let Ok(Some(element)) = document.query_selector(&selector) {
+                                            if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
+                                                let _ = input.focus();
+                                            }
+                                        }
+                                    }
+                                }
+                            }) as Box<dyn Fn() + 'static>)
+                        } else {
+                            None
+                        };
+
+                        if let (Some(_), Some(_)) = (&focus_prev, &focus_next) {
+                            view! {
+                                <MatchItem
+                                    match_number=index + 1
+                                    match_data=m.clone()
+                                    char_name=m.character_name.clone()
+                                    opp_name=m.opponent_character_name.clone()
+                                    characters=chars.clone()
+                                    is_selected=is_selected
+                                    on_match_clicked=move |shift, ctrl| handle_match_click(match_id, index, shift, ctrl)
+                                    _on_match_deleted=on_match_added
+                                    on_focus_prev=focus_prev.unwrap()
+                                    on_focus_next=focus_next.unwrap()
+                                />
+                            }.into_any()
+                        } else if let Some(_) = &focus_prev {
+                            view! {
+                                <MatchItem
+                                    match_number=index + 1
+                                    match_data=m.clone()
+                                    char_name=m.character_name.clone()
+                                    opp_name=m.opponent_character_name.clone()
+                                    characters=chars.clone()
+                                    is_selected=is_selected
+                                    on_match_clicked=move |shift, ctrl| handle_match_click(match_id, index, shift, ctrl)
+                                    _on_match_deleted=on_match_added
+                                    on_focus_prev=focus_prev.unwrap()
+                                />
+                            }.into_any()
+                        } else if let Some(_) = &focus_next {
+                            view! {
+                                <MatchItem
+                                    match_number=index + 1
+                                    match_data=m.clone()
+                                    char_name=m.character_name.clone()
+                                    opp_name=m.opponent_character_name.clone()
+                                    characters=chars.clone()
+                                    is_selected=is_selected
+                                    on_match_clicked=move |shift, ctrl| handle_match_click(match_id, index, shift, ctrl)
+                                    _on_match_deleted=on_match_added
+                                    on_focus_next=focus_next.unwrap()
+                                />
+                            }.into_any()
+                        } else {
+                            view! {
+                                <MatchItem
+                                    match_number=index + 1
+                                    match_data=m.clone()
+                                    char_name=m.character_name.clone()
+                                    opp_name=m.opponent_character_name.clone()
+                                    characters=chars.clone()
+                                    is_selected=is_selected
+                                    on_match_clicked=move |shift, ctrl| handle_match_click(match_id, index, shift, ctrl)
+                                    _on_match_deleted=on_match_added
+                                />
+                            }.into_any()
                         }
                     })
                     .collect_view()
