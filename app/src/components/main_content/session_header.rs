@@ -4,6 +4,7 @@ use leptos::task::spawn_local;
 use leptos::wasm_bindgen::JsCast;
 
 use crate::api::{self, Session};
+use crate::utils::gsp_format::{format_gsp, parse_gsp_input};
 
 #[component]
 pub fn SessionHeader(
@@ -12,17 +13,6 @@ pub fn SessionHeader(
     on_session_updated: impl Fn() + 'static + Copy + Send + Sync,
     _version: ReadSignal<i32>,
 ) -> impl IntoView {
-    let format_gsp = |num: i32| -> String {
-        num.to_string()
-            .as_bytes()
-            .rchunks(3)
-            .rev()
-            .map(std::str::from_utf8)
-            .collect::<Result<Vec<&str>, _>>()
-            .unwrap()
-            .join(",")
-    };
-
     let initial_date = session.session_date.clone();
     let initial_title = session.title.clone().unwrap_or_default();
     let initial_notes = session.notes.clone().unwrap_or_default();
@@ -151,7 +141,7 @@ pub fn SessionHeader(
 
     let save_start_gsp = move |_should_close: bool| {
         let new_gsp_str = start_gsp_value.get();
-        let numbers_only: String = new_gsp_str.chars().filter(|c| c.is_numeric()).collect();
+        let numbers_only = parse_gsp_input(&new_gsp_str);
 
         // バリデーション: 空でない場合はパース可能かチェック
         if !numbers_only.is_empty() && numbers_only.parse::<i32>().is_err() {
@@ -178,16 +168,7 @@ pub fn SessionHeader(
                     set_start_gsp_value.set(
                         updated_session
                             .start_gsp
-                            .map(|g| {
-                                g.to_string()
-                                    .as_bytes()
-                                    .rchunks(3)
-                                    .rev()
-                                    .map(std::str::from_utf8)
-                                    .collect::<Result<Vec<&str>, _>>()
-                                    .unwrap()
-                                    .join(",")
-                            })
+                            .map(format_gsp)
                             .unwrap_or_default(),
                     );
                     on_session_updated();
@@ -201,7 +182,7 @@ pub fn SessionHeader(
 
     let save_end_gsp = move |_should_close: bool| {
         let new_gsp_str = end_gsp_value.get();
-        let numbers_only: String = new_gsp_str.chars().filter(|c| c.is_numeric()).collect();
+        let numbers_only = parse_gsp_input(&new_gsp_str);
 
         // バリデーション: 空でない場合はパース可能かチェック
         if !numbers_only.is_empty() && numbers_only.parse::<i32>().is_err() {
@@ -225,21 +206,8 @@ pub fn SessionHeader(
             match api::update_session(session_id, req).await {
                 Ok(updated_session) => {
                     logging::log!("終了GSP更新成功");
-                    set_end_gsp_value.set(
-                        updated_session
-                            .end_gsp
-                            .map(|g| {
-                                g.to_string()
-                                    .as_bytes()
-                                    .rchunks(3)
-                                    .rev()
-                                    .map(std::str::from_utf8)
-                                    .collect::<Result<Vec<&str>, _>>()
-                                    .unwrap()
-                                    .join(",")
-                            })
-                            .unwrap_or_default(),
-                    );
+                    set_end_gsp_value
+                        .set(updated_session.end_gsp.map(format_gsp).unwrap_or_default());
                     on_session_updated();
                 }
                 Err(e) => {

@@ -4,6 +4,7 @@ use leptos::web_sys;
 
 mod api;
 mod components;
+mod utils;
 
 use api::{Character, Session};
 use components::{Header, MainContent, Sidebar};
