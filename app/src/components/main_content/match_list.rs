@@ -139,7 +139,17 @@ pub fn MatchList(
                 Some(MatchResult::Win) => Some(MatchResult::Loss), // 勝ち → 負け（トグル）
                 Some(MatchResult::Loss) => Some(MatchResult::Win), // 負け → 勝ち（トグル）
             };
-            set_draft_match.set(Some(draft));
+
+            // 自キャラ、相手キャラ、勝敗が全て揃っている場合は自動確定
+            if let (Some(char_id), Some(opp_id), Some(result)) = (
+                draft.character_id,
+                draft.opponent_character_id,
+                draft.result,
+            ) {
+                save_draft_match(char_id, opp_id, result, draft.comment.clone());
+            } else {
+                set_draft_match.set(Some(draft));
+            }
         }
     };
 
@@ -150,7 +160,17 @@ pub fn MatchList(
                 Some(MatchResult::Win) => Some(MatchResult::Loss), // 勝ち → 負け（トグル）
                 Some(MatchResult::Loss) => Some(MatchResult::Win), // 負け → 勝ち（トグル）
             };
-            set_draft_match.set(Some(draft));
+
+            // 自キャラ、相手キャラ、勝敗が全て揃っている場合は自動確定
+            if let (Some(char_id), Some(opp_id), Some(result)) = (
+                draft.character_id,
+                draft.opponent_character_id,
+                draft.result,
+            ) {
+                save_draft_match(char_id, opp_id, result, draft.comment.clone());
+            } else {
+                set_draft_match.set(Some(draft));
+            }
         }
     };
 
