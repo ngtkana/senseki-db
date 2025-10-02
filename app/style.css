@@ -190,7 +190,7 @@ body {
 }
 
 .session-item {
-    padding: 8px 16px;
+    padding: 4px 12px;
     border-bottom: 1px solid var(--border);
     cursor: pointer;
     background: var(--bg-primary);
@@ -227,7 +227,7 @@ body {
 
 .add-session-button {
     width: 100%;
-    padding: 12px;
+    padding: 6px;
     border: 1px dashed var(--border-dark);
     background: var(--bg-secondary);
     text-align: center;
@@ -251,9 +251,7 @@ body {
 }
 
 .content-header {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
 }
 
 .session-title-row {
@@ -363,10 +361,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 12px;
+    padding: 0 12px;
     background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    margin-bottom: 4px;
     font-size: 13px;
 }
 
