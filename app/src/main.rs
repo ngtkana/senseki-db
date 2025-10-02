@@ -109,12 +109,90 @@ fn App() -> impl IntoView {
         store_character_id(id);
     };
 
+    let handle_session_prev = move || {
+        let current_id = selected_session_id.get();
+        let all_sessions = sessions.get();
+        if let Some(current) = current_id {
+            if let Some(current_index) = all_sessions.iter().position(|s| s.id == current) {
+                if current_index + 1 < all_sessions.len() {
+                    set_selected_session_id.set(Some(all_sessions[current_index + 1].id));
+                }
+            }
+        }
+    };
+
+    let handle_session_next = move || {
+        let current_id = selected_session_id.get();
+        let all_sessions = sessions.get();
+        if let Some(current) = current_id {
+            if let Some(current_index) = all_sessions.iter().position(|s| s.id == current) {
+                if current_index > 0 {
+                    set_selected_session_id.set(Some(all_sessions[current_index - 1].id));
+                }
+            }
+        }
+    };
+
+    let handle_session_add = move || {
+        spawn_local(async move {
+            let req = api::CreateSessionRequest {
+                session_date: chrono::Local::now().format("%Y-%m-%d").to_string(),
+                title: None,
+                notes: None,
+                start_gsp: None,
+                end_gsp: None,
+            };
+            match api::create_session(req).await {
+                Ok(new_session) => {
+                    if let Ok(data) = fetch_and_sort_sessions().await {
+                        set_sessions.set(data);
+                        set_selected_session_id.set(Some(new_session.id));
+                    }
+                }
+                Err(e) => {
+                    leptos::logging::error!("セッション追加失敗: {}", e);
+                }
+            }
+        });
+    };
+
+    let handle_session_delete = move || {
+        let current_id = selected_session_id.get_untracked();
+        if let Some(session_id) = current_id {
+            spawn_local(async move {
+                match api::delete_session(session_id).await {
+                    Ok(_) => {
+                        leptos::logging::log!("セッション削除成功");
+                        if let Ok(data) = fetch_and_sort_sessions().await {
+                            // 削除後、最新のセッションを選択
+                            if let Some(latest) = data.first() {
+                                set_selected_session_id.set(Some(latest.id));
+                            } else {
+                                set_selected_session_id.set(None);
+                            }
+                            set_sessions.set(data);
+                        }
+                    }
+                    Err(e) => {
+                        leptos::logging::error!("セッション削除失敗: {}", e);
+                    }
+                }
+            });
+        }
+    };
+
     view! {
         <div class="app">
             <Header
                 characters=characters
                 selected_character_id=selected_character_id
                 on_character_select=handle_character_select
+                sessions=sessions
+                selected_session_id=selected_session_id
+                on_session_prev=handle_session_prev
+                on_session_next=handle_session_next
+                on_session_add=handle_session_add
+                on_session_delete=handle_session_delete
             />
 
             <div class="app-main">

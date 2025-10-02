@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::api::Character;
+use crate::api::{Character, Session};
 use crate::components::common::character_icon::{
     CharacterIcon, CharacterIconPlaceholder, IconSize,
 };
@@ -12,8 +12,15 @@ pub fn Header(
     characters: ReadSignal<Vec<Character>>,
     selected_character_id: ReadSignal<Option<i32>>,
     on_character_select: impl Fn(i32) + 'static + Copy + Send + Sync,
+    sessions: ReadSignal<Vec<Session>>,
+    selected_session_id: ReadSignal<Option<i32>>,
+    on_session_prev: impl Fn() + 'static + Copy + Send + Sync,
+    on_session_next: impl Fn() + 'static + Copy + Send + Sync,
+    on_session_add: impl Fn() + 'static + Copy + Send + Sync,
+    on_session_delete: impl Fn() + 'static + Copy + Send + Sync,
 ) -> impl IntoView {
     let (show_dropdown, set_show_dropdown) = signal(false);
+    let (show_delete_confirm, set_show_delete_confirm) = signal(false);
     let (search_query, set_search_query) = signal(String::new());
     let (cursor_index, set_cursor_index) = signal(0_i32);
     let input_ref = NodeRef::<leptos::html::Input>::new();
@@ -53,9 +60,67 @@ pub fn Header(
         set_cursor_index.set(0);
     });
 
+    // セッション操作ボタンの有効/無効判定
+    let can_go_prev = move || {
+        let current_id = selected_session_id.get();
+        let all_sessions = sessions.get();
+        if let Some(current) = current_id {
+            if let Some(current_index) = all_sessions.iter().position(|s| s.id == current) {
+                return current_index + 1 < all_sessions.len();
+            }
+        }
+        false
+    };
+
+    let can_go_next = move || {
+        let current_id = selected_session_id.get();
+        let all_sessions = sessions.get();
+        if let Some(current) = current_id {
+            if let Some(current_index) = all_sessions.iter().position(|s| s.id == current) {
+                return current_index > 0;
+            }
+        }
+        false
+    };
+
     view! {
         <header class="header">
             <h1>"スマブラSP 戦績管理"</h1>
+
+            <div class="header-session-controls">
+                <button
+                    class="session-control-btn"
+                    disabled=move || !can_go_prev()
+                    on:click=move |_| on_session_prev()
+                    title="前のセッション"
+                >
+                    "◀"
+                </button>
+                <button
+                    class="session-control-btn"
+                    disabled=move || !can_go_next()
+                    on:click=move |_| on_session_next()
+                    title="次のセッション"
+                >
+                    "▶"
+                </button>
+                <button
+                    class="session-control-btn session-add-btn"
+                    on:click=move |_| on_session_add()
+                    title="新しいセッション"
+                >
+                    "+"
+                </button>
+                <button
+                    class="session-control-btn session-delete-btn"
+                    disabled=move || selected_session_id.get().is_none()
+                    on:click=move |_| set_show_delete_confirm.set(true)
+                    title="セッションを削除"
+                >
+                    "🗑"
+                </button>
+            </div>
+
             <div class="header-character">
                 <div
                     class="character-avatar"
@@ -170,6 +235,32 @@ pub fn Header(
                     </div>
                 </Show>
             </div>
+
+            <Show when=move || show_delete_confirm.get()>
+                <div class="confirm-overlay" on:click=move |_| set_show_delete_confirm.set(false)>
+                    <div class="confirm-dialog" on:click=|e| e.stop_propagation()>
+                        <h3>"セッションを削除しますか？"</h3>
+                        <p>"このセッションに含まれる全てのマッチも削除されます。"</p>
+                        <div class="confirm-actions">
+                            <button
+                                class="btn"
+                                on:click=move |_| set_show_delete_confirm.set(false)
+                            >
+                                "キャンセル"
+                            </button>
+                            <button
+                                class="btn btn-danger"
+                                on:click=move |_| {
+                                    on_session_delete();
+                                    set_show_delete_confirm.set(false);
+                                }
+                            >
+                                "削除"
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Show>
         </header>
     }
 }
