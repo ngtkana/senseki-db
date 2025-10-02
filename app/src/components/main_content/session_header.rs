@@ -238,7 +238,7 @@ pub fn SessionHeader(
             </div>
 
             <div class="session-gsp-row">
-                <span class="gsp-label">"開始時:"</span>
+                <span class="gsp-label">"Start:"</span>
                 <input
                     type="text"
                     class=move || if start_gsp_invalid.get() { "gsp-input gsp-input-invalid" } else { "gsp-input" }
@@ -287,7 +287,7 @@ pub fn SessionHeader(
                     }
                     on:blur=move |_| save_start_gsp(false)
                 />
-                <span class="gsp-label">"終了時:"</span>
+                <span class="gsp-label">"End:"</span>
                 <input
                     type="text"
                     class=move || if end_gsp_invalid.get() { "gsp-input gsp-input-invalid" } else { "gsp-input" }

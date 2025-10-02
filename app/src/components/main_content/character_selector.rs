@@ -128,7 +128,6 @@ pub fn CharacterSelector(
                                     class="character-icon"
                                     alt=char.name.clone()
                                 />
-                                <span>{char.name}</span>
                             </>
                         }
                             .into_any()
