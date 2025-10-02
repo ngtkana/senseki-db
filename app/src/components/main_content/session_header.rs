@@ -16,8 +16,8 @@ pub fn SessionHeader(
     let initial_date = session.session_date.clone();
     let initial_title = session.title.clone().unwrap_or_default();
     let initial_notes = session.notes.clone().unwrap_or_default();
-    let initial_start_gsp = session.start_gsp.map(|g| format_gsp(g)).unwrap_or_default();
-    let initial_end_gsp = session.end_gsp.map(|g| format_gsp(g)).unwrap_or_default();
+    let initial_start_gsp = session.start_gsp.map(format_gsp).unwrap_or_default();
+    let initial_end_gsp = session.end_gsp.map(format_gsp).unwrap_or_default();
 
     let (date_value, set_date_value) = signal(initial_date.clone());
     let (title_value, set_title_value) = signal(initial_title.clone());

@@ -3,6 +3,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::{self, Character, Match, UpdateMatchRequest};
+use crate::utils::match_result::get_result_button_class;
 
 use super::character_selector::CharacterSelector;
 
@@ -133,7 +134,7 @@ pub fn MatchItem(
                 <div class="match-characters">
                     <CharacterSelector
                         characters=characters_for_char
-                        selected_id=selected_char_id.into()
+                        selected_id=selected_char_id
                         on_select=save_character
                         show_icon=false
                     />
@@ -142,7 +143,7 @@ pub fn MatchItem(
 
                     <CharacterSelector
                         characters=characters_for_opp
-                        selected_id=selected_opp_id.into()
+                        selected_id=selected_opp_id
                         on_select=save_opponent
                         show_icon=false
                     />
@@ -164,32 +165,10 @@ pub fn MatchItem(
                         save_result(new_result.to_string());
                     }
                 >
-                    <button
-                        class=move || {
-                            let result = result_value.get();
-                            if result == "win" {
-                                "result-btn result-btn-win active"
-                            } else if result.is_empty() {
-                                "result-btn result-btn-win unselected"
-                            } else {
-                                "result-btn result-btn-win inactive"
-                            }
-                        }
-                    >
+                    <button class=move || get_result_button_class(&result_value.get(), "win")>
                         "○"
                     </button>
-                    <button
-                        class=move || {
-                            let result = result_value.get();
-                            if result == "loss" {
-                                "result-btn result-btn-loss active"
-                            } else if result.is_empty() {
-                                "result-btn result-btn-loss unselected"
-                            } else {
-                                "result-btn result-btn-loss inactive"
-                            }
-                        }
-                    >
+                    <button class=move || get_result_button_class(&result_value.get(), "loss")>
                         "×"
                     </button>
                 </div>

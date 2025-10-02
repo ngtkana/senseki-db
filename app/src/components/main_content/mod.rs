@@ -10,8 +10,6 @@ use leptos::task::spawn_local;
 
 use crate::api::{Character, Match, Session};
 
-pub use character_autocomplete::CharacterAutocomplete;
-pub use character_selector::CharacterSelector;
 pub use match_list::MatchList;
 pub use session_header::SessionHeader;
 

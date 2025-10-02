@@ -4,6 +4,7 @@ use leptos::task::spawn_local;
 use std::collections::HashSet;
 
 use crate::api::{self, Character, CreateMatchRequest, Match};
+use crate::utils::match_result::get_result_button_class;
 
 use super::character_selector::CharacterSelector;
 use super::match_item::MatchItem;
@@ -291,7 +292,7 @@ fn DraftMatchItem(
                 <div class="match-characters">
                     <CharacterSelector
                         characters=characters_for_char
-                        selected_id=draft_char_id.into()
+                        selected_id=draft_char_id
                         on_select=on_character_select
                         placeholder="自キャラ"
                         show_icon=false
@@ -301,7 +302,7 @@ fn DraftMatchItem(
 
                     <CharacterSelector
                         characters=characters_for_opp
-                        selected_id=draft_opp_id.into()
+                        selected_id=draft_opp_id
                         on_select=on_opponent_select
                         placeholder="相手"
                         show_icon=false
@@ -318,32 +319,10 @@ fn DraftMatchItem(
                 />
 
                 <div class="result-buttons" on:click=move |_| on_result_change()>
-                    <button
-                        class=move || {
-                            let result = draft_result.clone();
-                            if result == "win" {
-                                "result-btn result-btn-win active"
-                            } else if result.is_empty() {
-                                "result-btn result-btn-win unselected"
-                            } else {
-                                "result-btn result-btn-win inactive"
-                            }
-                        }
-                    >
+                    <button class=move || get_result_button_class(&draft_result, "win")>
                         "○"
                     </button>
-                    <button
-                        class=move || {
-                            let result = draft_result_2.clone();
-                            if result == "loss" {
-                                "result-btn result-btn-loss active"
-                            } else if result.is_empty() {
-                                "result-btn result-btn-loss unselected"
-                            } else {
-                                "result-btn result-btn-loss inactive"
-                            }
-                        }
-                    >
+                    <button class=move || get_result_button_class(&draft_result_2, "loss")>
                         "×"
                     </button>
                 </div>
