@@ -1,3 +1,4 @@
+pub mod common;
 pub mod header;
 pub mod main_content;
 pub mod sidebar;

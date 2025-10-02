@@ -2,6 +2,9 @@ use leptos::prelude::*;
 use leptos::wasm_bindgen::JsCast;
 
 use crate::api::Character;
+use crate::components::common::character_icon::{
+    CharacterIcon, CharacterIconPlaceholder, IconSize,
+};
 use crate::utils::character_search::matches_search;
 use crate::utils::keyboard_navigation::handle_grid_keyboard_navigation;
 
@@ -126,10 +129,10 @@ pub fn CharacterSelector(
                 if show_icon {
                     if let Some(char) = selected_character_for_icon() {
                         Some(view! {
-                            <img
-                                src=format!("/public/fighters/{}.png", char.fighter_key)
-                                class="character-icon"
+                            <CharacterIcon
+                                fighter_key=char.fighter_key
                                 alt=char.name
+                                size=IconSize::Medium
                             />
                         })
                     } else {
@@ -148,17 +151,18 @@ pub fn CharacterSelector(
                 {move || {
                     if let Some(char) = selected_character_for_display() {
                         view! {
-                            <>
-                                <img
-                                    src=format!("/public/fighters/{}.png", char.fighter_key)
-                                    class="character-icon"
-                                    alt=char.name.clone()
-                                />
-                            </>
+                            <CharacterIcon
+                                fighter_key=char.fighter_key
+                                alt=char.name
+                                size=IconSize::Medium
+                            />
                         }
                             .into_any()
                     } else {
-                        view! { <div class="character-icon-placeholder">"？"</div> }.into_any()
+                        view! {
+                            <CharacterIconPlaceholder size=IconSize::Medium/>
+                        }
+                            .into_any()
                     }
                 }}
             </div>
@@ -255,10 +259,10 @@ pub fn CharacterSelector(
 
                                                     title=char_name
                                                 >
-                                                    <img
-                                                        src=format!("/public/fighters/{}.png", fighter_key)
-                                                        class="grid-icon"
+                                                    <CharacterIcon
+                                                        fighter_key=fighter_key
                                                         alt=char_name_for_alt
+                                                        size=IconSize::Large
                                                     />
                                                 </div>
                                             }

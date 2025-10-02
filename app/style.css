@@ -23,6 +23,58 @@
     --icon-size-large: 40px;
 }
 
+/* 統一されたキャラクターアイコンスタイル */
+.character-icon {
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+.character-icon-small {
+    width: var(--icon-size-small);
+    height: var(--icon-size-small);
+}
+
+.character-icon-medium {
+    width: var(--icon-size-medium);
+    height: var(--icon-size-medium);
+}
+
+.character-icon-large {
+    width: var(--icon-size-large);
+    height: var(--icon-size-large);
+}
+
+.character-icon-placeholder {
+    border: 2px dashed var(--border-dark);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.character-icon-placeholder.character-icon-small {
+    width: var(--icon-size-small);
+    height: var(--icon-size-small);
+    font-size: 14px;
+}
+
+.character-icon-placeholder.character-icon-medium {
+    width: var(--icon-size-medium);
+    height: var(--icon-size-medium);
+    font-size: 18px;
+}
+
+.character-icon-placeholder.character-icon-large {
+    width: var(--icon-size-large);
+    height: var(--icon-size-large);
+    font-size: 20px;
+}
+
 /* Base */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -76,16 +128,19 @@ body {
     border-color: var(--text-primary);
 }
 
-.avatar-icon {
+/* ヘッダーのアバターは円形表示のため、特別なスタイルが必要 */
+.character-avatar .character-icon {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.avatar-placeholder {
+.character-avatar .character-icon-placeholder {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 0;
     font-size: 20px;
-    font-weight: 600;
-    color: var(--text-tertiary);
 }
 
 .character-dropdown {
@@ -168,7 +223,8 @@ body {
     box-shadow: 0 0 0 2px #2196f3;
 }
 
-.grid-icon {
+/* グリッドアイテム内のアイコンは親要素のサイズに合わせる */
+.character-grid-item .character-icon {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -511,10 +567,6 @@ body {
     background: var(--bg-hover);
 }
 
-.char-dropdown-item .character-icon {
-    width: var(--icon-size-small);
-    height: var(--icon-size-small);
-}
 
 .result-buttons {
     display: flex;
@@ -587,27 +639,6 @@ body {
     color: var(--text-secondary);
 }
 
-.character-icon {
-    width: var(--icon-size-medium);
-    height: var(--icon-size-medium);
-    object-fit: contain;
-    vertical-align: middle;
-}
-
-.character-icon-placeholder {
-    width: var(--icon-size-medium);
-    height: var(--icon-size-medium);
-    border: 2px dashed var(--border-dark);
-    background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-tertiary);
-    border-radius: 4px;
-    flex-shrink: 0;
-}
 
 .vs-text {
     color: var(--text-secondary);
@@ -986,11 +1017,6 @@ textarea.form-input {
     gap: 6px;
 }
 
-.autocomplete-selected-icon {
-    width: var(--icon-size-small);
-    height: var(--icon-size-small);
-    flex-shrink: 0;
-}
 
 .autocomplete-input {
     flex: 1;
@@ -1045,10 +1071,6 @@ textarea.form-input {
     background: var(--bg-hover);
 }
 
-.autocomplete-item .character-icon {
-    width: var(--icon-size-small);
-    height: var(--icon-size-small);
-}
 
 /* Responsive */
 @media (max-width: 768px) {

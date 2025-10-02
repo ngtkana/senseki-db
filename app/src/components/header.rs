@@ -1,6 +1,9 @@
 use leptos::prelude::*;
 
 use crate::api::Character;
+use crate::components::common::character_icon::{
+    CharacterIcon, CharacterIconPlaceholder, IconSize,
+};
 use crate::utils::character_search::matches_search;
 use crate::utils::keyboard_navigation::handle_grid_keyboard_navigation;
 
@@ -61,15 +64,18 @@ pub fn Header(
                     {move || {
                         if let Some(char) = selected_character() {
                             view! {
-                                <img
-                                    src=format!("/public/fighters/{}.png", char.fighter_key)
-                                    class="avatar-icon"
+                                <CharacterIcon
+                                    fighter_key=char.fighter_key
                                     alt=char.name
+                                    size=IconSize::Large
                                 />
                             }
                                 .into_any()
                         } else {
-                            view! { <div class="avatar-placeholder">"?"</div> }.into_any()
+                            view! {
+                                <CharacterIconPlaceholder size=IconSize::Large/>
+                            }
+                                .into_any()
                         }
                     }}
 
@@ -148,10 +154,10 @@ pub fn Header(
 
                                                 title=char_name
                                             >
-                                                <img
-                                                    src=format!("/public/fighters/{}.png", fighter_key)
-                                                    class="grid-icon"
+                                                <CharacterIcon
+                                                    fighter_key=fighter_key
                                                     alt=char_name_for_alt
+                                                    size=IconSize::Large
                                                 />
                                             </div>
                                         }
