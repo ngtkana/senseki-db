@@ -50,21 +50,64 @@ pub fn CharacterSelector(
             if let Some(element) = trigger_ref.get() {
                 let elem = element.as_ref() as &web_sys::Element;
                 let rect = elem.get_bounding_client_rect();
-                let window_height = web_sys::window()
-                    .and_then(|w| w.inner_height().ok())
+                let window = web_sys::window().unwrap();
+                let window_width = window
+                    .inner_width()
+                    .ok()
+                    .and_then(|w| w.as_f64())
+                    .unwrap_or(1024.0);
+                let window_height = window
+                    .inner_height()
+                    .ok()
                     .and_then(|h| h.as_f64())
-                    .unwrap_or(600.0);
+                    .unwrap_or(768.0);
 
                 let dropdown_height = 500.0;
+                let dropdown_width = 400.0;
+                let margin = 16.0;
+
+                // 縦位置の計算：下に表示できるか確認
                 let space_below = window_height - rect.bottom();
-                let show_above = space_below < dropdown_height;
-                let top = if show_above {
-                    rect.top() - dropdown_height
-                } else {
+                let mut top = if space_below >= dropdown_height {
+                    // 下に十分なスペースがある
                     rect.bottom()
+                } else {
+                    // 上に表示を試みる
+                    let space_above = rect.top();
+                    if space_above >= dropdown_height {
+                        rect.top() - dropdown_height
+                    } else {
+                        // どちらも足りない場合は、より広い方に配置
+                        if space_below > space_above {
+                            rect.bottom()
+                        } else {
+                            margin
+                        }
+                    }
                 };
 
-                set_dropdown_pos.set((rect.left(), top, show_above));
+                // 上下のマージンを確保
+                if top < margin {
+                    top = margin;
+                }
+                if top + dropdown_height > window_height - margin {
+                    top = window_height - dropdown_height - margin;
+                }
+
+                // 横位置の計算
+                let mut left = rect.left();
+
+                // 右にはみ出る場合
+                if left + dropdown_width > window_width - margin {
+                    left = window_width - dropdown_width - margin;
+                }
+
+                // 左にはみ出る場合
+                if left < margin {
+                    left = margin;
+                }
+
+                set_dropdown_pos.set((left, top, false));
                 set_show_dropdown.set(true);
             }
         }
@@ -95,24 +138,64 @@ pub fn CharacterSelector(
             if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
                 let elem = el.as_ref() as &web_sys::Element;
                 let rect = elem.get_bounding_client_rect();
-                let window_height = web_sys::window()
-                    .and_then(|w| w.inner_height().ok())
+                let window = web_sys::window().unwrap();
+                let window_width = window
+                    .inner_width()
+                    .ok()
+                    .and_then(|w| w.as_f64())
+                    .unwrap_or(1024.0);
+                let window_height = window
+                    .inner_height()
+                    .ok()
                     .and_then(|h| h.as_f64())
-                    .unwrap_or(600.0);
+                    .unwrap_or(768.0);
 
-                // ドロップダウンの高さ（最大500px）
                 let dropdown_height = 500.0;
-                let space_below = window_height - rect.bottom();
+                let dropdown_width = 400.0;
+                let margin = 16.0;
 
-                // 下に十分なスペースがない場合は上に表示
-                let show_above = space_below < dropdown_height;
-                let top = if show_above {
-                    rect.top() - dropdown_height
-                } else {
+                // 縦位置の計算：下に表示できるか確認
+                let space_below = window_height - rect.bottom();
+                let mut top = if space_below >= dropdown_height {
+                    // 下に十分なスペースがある
                     rect.bottom()
+                } else {
+                    // 上に表示を試みる
+                    let space_above = rect.top();
+                    if space_above >= dropdown_height {
+                        rect.top() - dropdown_height
+                    } else {
+                        // どちらも足りない場合は、より広い方に配置
+                        if space_below > space_above {
+                            rect.bottom()
+                        } else {
+                            margin
+                        }
+                    }
                 };
 
-                set_dropdown_pos.set((rect.left(), top, show_above));
+                // 上下のマージンを確保
+                if top < margin {
+                    top = margin;
+                }
+                if top + dropdown_height > window_height - margin {
+                    top = window_height - dropdown_height - margin;
+                }
+
+                // 横位置の計算
+                let mut left = rect.left();
+
+                // 右にはみ出る場合
+                if left + dropdown_width > window_width - margin {
+                    left = window_width - dropdown_width - margin;
+                }
+
+                // 左にはみ出る場合
+                if left < margin {
+                    left = margin;
+                }
+
+                set_dropdown_pos.set((left, top, false));
             }
         }
         set_show_dropdown.set(true);

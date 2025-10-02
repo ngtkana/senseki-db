@@ -1223,9 +1223,6 @@ textarea.form-input {
         min-width: auto;
         width: calc(100vw - 32px);
         max-width: 400px;
-        left: 50%;
-        right: auto;
-        transform: translateX(-50%);
     }
 
     /* キャラクターグリッドを6列に */
@@ -1332,11 +1329,6 @@ textarea.form-input {
         width: calc(100vw - 32px);
         max-width: 350px;
         max-height: 70vh;
-
-        /* 中央配置 */
-        left: 50% !important;
-        top: 50% !important;
-        transform: translate(-50%, -50%) !important;
     }
 
     /* オートコンプリート */
