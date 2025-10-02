@@ -149,14 +149,6 @@ pub fn MatchItem(
                     />
                 </div>
 
-                <input
-                    type="text"
-                    class="match-comment-input"
-                    value=comment_value
-                    on:input=move |ev| set_comment_value.set(event_target_value(&ev))
-                    on:blur=move |_| save_comment(false)
-                />
-
                 <div
                     class="result-buttons"
                     on:click=move |_| {
@@ -173,6 +165,13 @@ pub fn MatchItem(
                     </button>
                 </div>
 
+                <input
+                    type="text"
+                    class="match-comment-input"
+                    value=comment_value
+                    on:input=move |ev| set_comment_value.set(event_target_value(&ev))
+                    on:blur=move |_| save_comment(false)
+                />
             </div>
         </div>
     }
